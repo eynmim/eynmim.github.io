@@ -636,6 +636,62 @@ body:has(.glass-card:hover) #cursor-ring {
   border-color: #00f0ff;
 }
 
+/* ── FLOATING SOCIALS (scroll-linked hero → navbar) ── */
+.floating-socials {
+  position: fixed;
+  z-index: 51;
+  display: flex; gap: 0.6rem;
+  /* Position is set by JS inline styles */
+}
+
+.floating-social-link {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-family: var(--font-mono); font-size: 0.7rem;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  background: rgba(5, 10, 14, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: color 0.3s, border-color 0.3s, background 0.3s,
+              box-shadow 0.3s, padding 0.3s;
+  cursor: none;
+}
+.floating-social-link:hover {
+  color: #00f0ff;
+  border-color: rgba(0, 240, 255, 0.4);
+  background: rgba(0, 240, 255, 0.08);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
+}
+
+.floating-social-icon {
+  width: 20px; height: 20px;
+  opacity: 0.7;
+  transition: opacity 0.3s;
+}
+.floating-social-link:hover .floating-social-icon { opacity: 1; }
+
+.floating-social-label {
+  overflow: hidden;
+  max-width: 80px;
+  transition: max-width 0.3s, opacity 0.3s;
+}
+
+/* Docked: compact icons, hide labels */
+.floating-socials.docked .floating-social-link {
+  padding: 0.4rem 0.6rem;
+}
+.floating-socials.docked .floating-social-label {
+  max-width: 0; opacity: 0;
+}
+
+@media (max-width: 768px) {
+  .floating-socials { top: auto !important; bottom: 1rem !important; right: 1rem !important; transform: none !important; }
+  .floating-social-label { max-width: 0; opacity: 0; }
+}
+
 /* ── HERO ACTIONS + SOCIALS ── */
 .hero-actions {
   display: flex; flex-direction: column;

@@ -13,6 +13,7 @@ import Skills from './components/Skills';
 import Experience from './components/Experience';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
+import FloatingSocials from './components/FloatingSocials';
 
 export default function App() {
   const [booted, setBooted] = useState(false);
@@ -65,6 +66,7 @@ export default function App() {
           <div className="scanline-overlay" />
 
           <Navbar />
+          <FloatingSocials />
 
           <div className="portfolio-page">
             <Hero />
