@@ -17,30 +17,38 @@ import Footer from './components/Footer';
 export default function App() {
   const [booted, setBooted] = useState(false);
 
+  // Lock body scroll during boot
+  useEffect(() => {
+    if (!booted) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.height = '100vh';
+    }
+  }, [booted]);
+
   const handleBootComplete = useCallback(() => {
+    // Reset scroll while body is still locked
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
-    setBooted(true);
-  }, []);
 
-  // Force scroll to top after portfolio mounts
-  useEffect(() => {
-    if (booted) {
+    setBooted(true);
+
+    // Unlock body + reset scroll after DOM settles
+    requestAnimationFrame(() => {
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-      requestAnimationFrame(() => {
+
+      setTimeout(() => {
+        // Unlock scrolling
+        document.body.style.overflow = '';
+        document.body.style.height = '';
+        // Final scroll reset
         window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-      });
-      const t = setTimeout(() => {
-        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-        // Enable smooth scroll only after we've landed at top
+        // Enable smooth scroll for nav links
         document.documentElement.classList.add('smooth-scroll');
-      }, 100);
-      return () => clearTimeout(t);
-    }
-  }, [booted]);
+      }, 150);
+    });
+  }, []);
 
   return (
     <LanguageProvider>
