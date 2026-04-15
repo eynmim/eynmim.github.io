@@ -26,9 +26,8 @@
 
 /* ===== BASE ===== */
 * { margin: 0; padding: 0; box-sizing: border-box; }
-/* smooth scroll only for anchor links, not programmatic scrollTo */
 html { scroll-behavior: auto; }
-html:has(.portfolio-page) { scroll-behavior: smooth; }
+html.smooth-scroll { scroll-behavior: smooth; }
 
 body {
   background-color: var(--color-bg-primary);

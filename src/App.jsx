@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { LanguageProvider } from './context/LanguageContext';
 import BootSequence from './components/BootSequence';
@@ -16,7 +16,31 @@ import Footer from './components/Footer';
 
 export default function App() {
   const [booted, setBooted] = useState(false);
-  const handleBootComplete = useCallback(() => setBooted(true), []);
+
+  const handleBootComplete = useCallback(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    setBooted(true);
+  }, []);
+
+  // Force scroll to top after portfolio mounts
+  useEffect(() => {
+    if (booted) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      });
+      const t = setTimeout(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        // Enable smooth scroll only after we've landed at top
+        document.documentElement.classList.add('smooth-scroll');
+      }, 100);
+      return () => clearTimeout(t);
+    }
+  }, [booted]);
 
   return (
     <LanguageProvider>
@@ -25,7 +49,7 @@ export default function App() {
         {!booted && <BootSequence onComplete={handleBootComplete} />}
       </AnimatePresence>
 
-      {/* Main Portfolio — direct after boot */}
+      {/* Main Portfolio */}
       {booted && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}>
           <CustomCursor />
