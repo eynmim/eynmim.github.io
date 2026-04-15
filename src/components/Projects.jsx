@@ -98,6 +98,8 @@ function ProjectCard({ project, index }) {
           className="glass-card-expand"
           onClick={() => setExpanded(!expanded)}
           style={{ color }}
+          aria-expanded={expanded}
+          aria-label={expanded ? 'Hide project details' : 'Show project details'}
         >
           {expanded ? '- Hide details' : '+ Show details'}
         </button>

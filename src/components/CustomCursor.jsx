@@ -14,16 +14,15 @@ export default function CustomCursor() {
     const onMove = (e) => {
       mx = e.clientX;
       my = e.clientY;
-      dot.style.left = mx + 'px';
-      dot.style.top = my + 'px';
+      // Use transform instead of left/top for GPU acceleration
+      dot.style.transform = `translate3d(${mx}px, ${my}px, 0)`;
     };
 
     let rafId;
     function lerpRing() {
       rx += (mx - rx) * 0.14;
       ry += (my - ry) * 0.14;
-      ring.style.left = rx + 'px';
-      ring.style.top = ry + 'px';
+      ring.style.transform = `translate3d(${rx}px, ${ry}px, 0)`;
       rafId = requestAnimationFrame(lerpRing);
     }
 
@@ -38,8 +37,8 @@ export default function CustomCursor() {
 
   return (
     <>
-      <div ref={dotRef} id="cursor-dot" />
-      <div ref={ringRef} id="cursor-ring" />
+      <div ref={dotRef} id="cursor-dot" aria-hidden="true" />
+      <div ref={ringRef} id="cursor-ring" aria-hidden="true" />
     </>
   );
 }

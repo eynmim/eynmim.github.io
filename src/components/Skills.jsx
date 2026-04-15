@@ -1,11 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLang } from '../context/LanguageContext';
 import { skillCategories } from '../data/skillsData';
 import { ScrollReveal } from './Hero';
 
 function SpotlightCanvas() {
   const canvasRef = useRef(null);
-  const sectionRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -93,8 +92,6 @@ function SkillBar({ name, level, color, delay }) {
     </div>
   );
 }
-
-import { useState } from 'react';
 
 export default function Skills() {
   const { lang, t } = useLang();

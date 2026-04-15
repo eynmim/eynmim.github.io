@@ -10,7 +10,7 @@ export default function Footer() {
         &nbsp;&nbsp;|&nbsp;&nbsp;
         <a href="https://github.com/eynmim" target="_blank" rel="noopener noreferrer">GitHub</a>
         &nbsp;&nbsp;|&nbsp;&nbsp;
-        <a href="https://linkedin.com/in/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        <a href="https://www.linkedin.com/in/ali-mansouri-767b65235/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
       </p>
     </footer>
   );

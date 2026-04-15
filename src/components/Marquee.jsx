@@ -6,16 +6,18 @@ const ITEMS = [
 ];
 
 export default function Marquee() {
-  const content = ITEMS.map(
-    (t, i) => `<span class="marquee-item">${t}</span><span class="marquee-sep">\u2726</span>`
-  ).join('');
+  const doubled = [...ITEMS, ...ITEMS];
 
   return (
     <div className="marquee-wrap" aria-hidden="true">
-      <div
-        className="marquee-track"
-        dangerouslySetInnerHTML={{ __html: content + content }}
-      />
+      <div className="marquee-track">
+        {doubled.map((text, i) => (
+          <span key={i} className="marquee-item-wrap">
+            <span className="marquee-item">{text}</span>
+            <span className="marquee-sep">{'\u2726'}</span>
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

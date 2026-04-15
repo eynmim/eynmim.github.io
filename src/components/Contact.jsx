@@ -16,8 +16,8 @@ const terminalCommands = {
     it: "Firmware: C/C++ | FreeRTOS | STM32 | ESP32\nHardware: KiCAD | Altium | PCB\nSoftware: Python | Git | Docker | Linux",
   },
   contact: {
-    en: "Email:    ali.mansouri@example.com\nPhone:    +39 350 9738344\nLocation: Turin, Italy",
-    it: "Email:    ali.mansouri@example.com\nTelefono: +39 350 9738344\nLuogo:    Torino, Italia",
+    en: "Email:    Mansouriali955@gmail.com\nPhone:    +39 350 9738344\nLocation: Turin, Italy",
+    it: "Email:    Mansouriali955@gmail.com\nTelefono: +39 350 9738344\nLuogo:    Torino, Italia",
   },
   github: { en: ">> Opening github.com/eynmim ...", it: ">> Apertura github.com/eynmim ..." },
   linkedin: { en: ">> Opening LinkedIn ...", it: ">> Apertura LinkedIn ..." },
@@ -43,7 +43,7 @@ function Terminal() {
     const newHistory = [...history, { type: 'input', text: `ali@terminal:~$ ${cmd}` }];
     if (cmd === 'clear') { setHistory([{ type: 'system', text: 'Terminal cleared.' }]); setInput(''); return; }
     if (cmd === 'github') window.open('https://github.com/eynmim', '_blank');
-    if (cmd === 'linkedin') window.open('https://linkedin.com/in/', '_blank');
+    if (cmd === 'linkedin') window.open('https://www.linkedin.com/in/ali-mansouri-767b65235/', '_blank');
     const response = terminalCommands[cmd];
     if (response) newHistory.push({ type: 'output', text: response[lang] || response.en });
     else newHistory.push({ type: 'error', text: `Command not found: ${cmd}. Type "help" for commands.` });
@@ -71,7 +71,8 @@ function Terminal() {
         <form onSubmit={handleCommand} className="terminal-input-row">
           <span style={{ color: '#39ff14' }}>ali@terminal:~$&nbsp;</span>
           <input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)}
-            className="terminal-input" spellCheck={false} autoComplete="off" />
+            className="terminal-input" spellCheck={false} autoComplete="off"
+            aria-label="Terminal command input" />
         </form>
         <div ref={bottomRef} />
       </div>
@@ -84,7 +85,7 @@ function ContactForm() {
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const handleSubmit = (e) => {
     e.preventDefault();
-    window.location.href = `mailto:ali.mansouri@example.com?subject=Contact from ${form.name}&body=${encodeURIComponent(form.message)}`;
+    window.location.href = `mailto:Mansouriali955@gmail.com?subject=Contact from ${form.name}&body=${encodeURIComponent(form.message)}`;
   };
 
   return (
@@ -92,14 +93,14 @@ function ContactForm() {
       {[{ key: 'name', label: t('contact.formName'), type: 'text' },
         { key: 'email', label: t('contact.formEmail'), type: 'email' }].map((f) => (
         <div key={f.key} className="form-group">
-          <label>{f.label}</label>
-          <input type={f.type} value={form[f.key]} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
+          <label htmlFor={`contact-${f.key}`}>{f.label}</label>
+          <input id={`contact-${f.key}`} type={f.type} value={form[f.key]} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
             required className="form-input" />
         </div>
       ))}
       <div className="form-group">
-        <label>{t('contact.formMessage')}</label>
-        <textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })}
+        <label htmlFor="contact-message">{t('contact.formMessage')}</label>
+        <textarea id="contact-message" value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })}
           rows={4} required className="form-input form-textarea" />
       </div>
       <button type="submit" className="hero-cta" style={{ width: '100%', textAlign: 'center' }}>
@@ -131,7 +132,7 @@ export default function Contact() {
               <p className="section-sub" style={{ marginTop: '1rem', marginBottom: '0.5rem' }}>{t('contact.orUse')}</p>
               <div className="contact-link-row">
                 <a href="https://github.com/eynmim" target="_blank" rel="noopener noreferrer">GitHub</a>
-                <a href="https://linkedin.com/in/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+                <a href="https://www.linkedin.com/in/ali-mansouri-767b65235/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
                 <span>+39 350 9738344</span>
               </div>
             </div>

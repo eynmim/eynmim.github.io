@@ -94,7 +94,7 @@ export default function Navbar() {
 
           <div className="nav-divider" />
 
-          <button onClick={toggleLang} className="nav-lang-btn">
+          <button onClick={toggleLang} className="nav-lang-btn" aria-label={lang === 'en' ? 'Switch to Italian' : 'Switch to English'}>
             {lang === 'en' ? 'IT' : 'EN'}
           </button>
         </div>
