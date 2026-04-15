@@ -1,0 +1,143 @@
+import { useState, useRef, useEffect } from 'react';
+import { useLang } from '../context/LanguageContext';
+import { ScrollReveal } from './Hero';
+
+const terminalCommands = {
+  help: {
+    en: `Available commands:\n  about     \u2014 Who is Ali Mansouri?\n  skills    \u2014 Technical expertise\n  contact   \u2014 Contact information\n  github    \u2014 Open GitHub profile\n  linkedin  \u2014 Open LinkedIn profile\n  clear     \u2014 Clear terminal`,
+    it: `Comandi disponibili:\n  about     \u2014 Chi \u00e8 Ali Mansouri?\n  skills    \u2014 Competenze tecniche\n  contact   \u2014 Contatti\n  github    \u2014 Apri profilo GitHub\n  linkedin  \u2014 Apri profilo LinkedIn\n  clear     \u2014 Pulisci terminale`,
+  },
+  about: {
+    en: "Embedded Systems Engineer based in Turin, Italy.\nI design PCBs, write firmware, and build IoT systems.",
+    it: "Ingegnere di Sistemi Embedded a Torino, Italia.\nProgetto PCB, scrivo firmware e costruisco sistemi IoT.",
+  },
+  skills: {
+    en: "Firmware: C/C++ | FreeRTOS | STM32 | ESP32\nHardware: KiCAD | Altium | PCB Design\nSoftware: Python | Git | Docker | Linux",
+    it: "Firmware: C/C++ | FreeRTOS | STM32 | ESP32\nHardware: KiCAD | Altium | PCB\nSoftware: Python | Git | Docker | Linux",
+  },
+  contact: {
+    en: "Email:    ali.mansouri@example.com\nPhone:    +39 350 9738344\nLocation: Turin, Italy",
+    it: "Email:    ali.mansouri@example.com\nTelefono: +39 350 9738344\nLuogo:    Torino, Italia",
+  },
+  github: { en: ">> Opening github.com/eynmim ...", it: ">> Apertura github.com/eynmim ..." },
+  linkedin: { en: ">> Opening LinkedIn ...", it: ">> Apertura LinkedIn ..." },
+};
+
+function Terminal() {
+  const { lang } = useLang();
+  const [history, setHistory] = useState([
+    { type: 'system', text: 'AM-Terminal v2.0 \u2014 Type "help" for commands' },
+  ]);
+  const [input, setInput] = useState('');
+  const bottomRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [history]);
+
+  const handleCommand = (e) => {
+    e.preventDefault();
+    const cmd = input.trim().toLowerCase();
+    if (!cmd) return;
+    const newHistory = [...history, { type: 'input', text: `ali@terminal:~$ ${cmd}` }];
+    if (cmd === 'clear') { setHistory([{ type: 'system', text: 'Terminal cleared.' }]); setInput(''); return; }
+    if (cmd === 'github') window.open('https://github.com/eynmim', '_blank');
+    if (cmd === 'linkedin') window.open('https://linkedin.com/in/', '_blank');
+    const response = terminalCommands[cmd];
+    if (response) newHistory.push({ type: 'output', text: response[lang] || response.en });
+    else newHistory.push({ type: 'error', text: `Command not found: ${cmd}. Type "help" for commands.` });
+    setHistory(newHistory);
+    setInput('');
+  };
+
+  return (
+    <div className="glass-card terminal-card" style={{ '--card-accent': '#00f0ff' }}
+      onClick={() => inputRef.current?.focus()}>
+      <div className="terminal-header">
+        <div className="terminal-dots">
+          <span style={{ background: '#ff2d6b' }} />
+          <span style={{ background: '#ffbe0b' }} />
+          <span style={{ background: '#39ff14' }} />
+        </div>
+        <span className="terminal-label">AM-Terminal</span>
+      </div>
+      <div className="terminal-body">
+        {history.map((line, i) => (
+          <div key={i} className="terminal-line" style={{
+            color: line.type === 'input' ? '#39ff14' : line.type === 'error' ? '#ff2d6b' : line.type === 'system' ? '#00f0ff' : '#8892a4'
+          }}>{line.text}</div>
+        ))}
+        <form onSubmit={handleCommand} className="terminal-input-row">
+          <span style={{ color: '#39ff14' }}>ali@terminal:~$&nbsp;</span>
+          <input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)}
+            className="terminal-input" spellCheck={false} autoComplete="off" />
+        </form>
+        <div ref={bottomRef} />
+      </div>
+    </div>
+  );
+}
+
+function ContactForm() {
+  const { t } = useLang();
+  const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    window.location.href = `mailto:ali.mansouri@example.com?subject=Contact from ${form.name}&body=${encodeURIComponent(form.message)}`;
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="contact-form">
+      {[{ key: 'name', label: t('contact.formName'), type: 'text' },
+        { key: 'email', label: t('contact.formEmail'), type: 'email' }].map((f) => (
+        <div key={f.key} className="form-group">
+          <label>{f.label}</label>
+          <input type={f.type} value={form[f.key]} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
+            required className="form-input" />
+        </div>
+      ))}
+      <div className="form-group">
+        <label>{t('contact.formMessage')}</label>
+        <textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })}
+          rows={4} required className="form-input form-textarea" />
+      </div>
+      <button type="submit" className="hero-cta" style={{ width: '100%', textAlign: 'center' }}>
+        {'>'} {t('contact.formSend')}
+      </button>
+    </form>
+  );
+}
+
+export default function Contact() {
+  const { t } = useLang();
+  return (
+    <section id="contact" className="portfolio-section">
+      <ScrollReveal>
+        <span className="tag">04 — Contact</span>
+      </ScrollReveal>
+      <ScrollReveal delay={0.1}>
+        <h2 className="section-title">{t('contact.title')}</h2>
+        <p className="section-sub">{t('contact.subtitle')}</p>
+      </ScrollReveal>
+      <div className="contact-grid">
+        <ScrollReveal delay={0.2}>
+          <Terminal />
+        </ScrollReveal>
+        <ScrollReveal delay={0.3}>
+          <div className="glass-card" style={{ '--card-accent': '#b537f2', padding: '1.8rem' }}>
+            <ContactForm />
+            <div className="contact-links">
+              <p className="section-sub" style={{ marginTop: '1rem', marginBottom: '0.5rem' }}>{t('contact.orUse')}</p>
+              <div className="contact-link-row">
+                <a href="https://github.com/eynmim" target="_blank" rel="noopener noreferrer">GitHub</a>
+                <a href="https://linkedin.com/in/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+                <span>+39 350 9738344</span>
+              </div>
+            </div>
+          </div>
+        </ScrollReveal>
+      </div>
+    </section>
+  );
+}
