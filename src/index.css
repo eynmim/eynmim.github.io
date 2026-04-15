@@ -363,14 +363,16 @@ body:has(.glass-card:hover) #cursor-ring {
 .nav-inner {
   max-width: 1200px; margin: 0 auto;
   padding: 0.8rem 1.5rem;
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: center;
+  gap: 1rem;
 }
 
-/* Logo */
+/* Logo — hidden on desktop, shown on mobile */
 .nav-logo {
-  display: flex; align-items: center; gap: 0.7rem;
+  display: none; align-items: center; gap: 0.7rem;
   text-decoration: none; cursor: none;
 }
+@media (max-width: 768px) { .nav-logo { display: flex; } }
 .nav-logo-svg {
   transition: filter 0.3s;
 }
@@ -389,11 +391,16 @@ body:has(.glass-card:hover) #cursor-ring {
 }
 @media (max-width: 640px) { .nav-logo-text { display: none; } }
 
-/* Links */
+/* Links — centered */
 .nav-links {
   display: flex; align-items: center; gap: 0.2rem;
 }
 @media (max-width: 768px) { .nav-links { display: none; } }
+
+/* Mobile: logo left, hamburger right */
+@media (max-width: 768px) {
+  .nav-inner { justify-content: space-between; }
+}
 
 .nav-link {
   font-family: var(--font-mono); font-size: 0.7rem;
@@ -1030,6 +1037,104 @@ body:has(.glass-card:hover) #cursor-ring {
   transition: color 0.3s;
 }
 .portfolio-footer a:hover { color: #39ff14; }
+
+/* ── SIGNAL SENT OVERLAY ── */
+.signal-overlay {
+  position: fixed !important;
+  top: 0 !important; left: 0 !important;
+  width: 100vw !important; height: 100vh !important;
+  z-index: 99999 !important;
+  background: rgba(5, 10, 14, 0.95);
+  backdrop-filter: blur(10px);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  animation: signalFadeIn 0.4s ease;
+}
+.signal-overlay.fade-out {
+  animation: signalFadeOut 0.6s ease forwards;
+}
+@keyframes signalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes signalFadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+.signal-traces {
+  width: min(90vw, 600px); height: auto;
+}
+
+/* Trace self-drawing */
+.signal-trace {
+  stroke-dasharray: var(--len);
+  stroke-dashoffset: var(--len);
+  opacity: 0;
+}
+.signal-trace.draw {
+  opacity: 1;
+  animation: signalDraw 0.8s ease forwards;
+  animation-delay: var(--delay);
+}
+@keyframes signalDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* Nodes appear */
+.signal-node { transition: opacity 0.3s; }
+.signal-node.show {
+  animation: nodeAppear 0.3s ease forwards;
+  animation-delay: var(--node-delay);
+}
+@keyframes nodeAppear {
+  from { opacity: 0; r: 0; }
+  to { opacity: 0.7; r: 3; }
+}
+
+/* IC Chip scales in */
+.signal-chip {
+  opacity: 0; transform-origin: 300px 200px;
+  transform: scale(0.5);
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.signal-chip.show {
+  opacity: 1; transform: scale(1);
+}
+
+/* Checkmark draws */
+.signal-check {
+  stroke-dasharray: var(--len);
+  stroke-dashoffset: var(--len);
+  opacity: 0;
+}
+.signal-check.draw {
+  opacity: 1;
+  animation: signalDraw 0.4s ease forwards;
+  animation-delay: 0.1s;
+}
+
+/* Text */
+.signal-text {
+  margin-top: 2rem;
+  text-align: center;
+  opacity: 0; transform: translateY(10px);
+  transition: all 0.5s ease;
+}
+.signal-text.show {
+  opacity: 1; transform: translateY(0);
+}
+.signal-text-main {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: clamp(0.9rem, 2.5vw, 1.3rem);
+  color: #00f0ff;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px #00f0ff44, 0 0 20px #00f0ff22;
+}
+.signal-text-sub {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  margin-top: 0.5rem;
+  letter-spacing: 0.1em;
+}
 
 /* ── CONTACT ── */
 .contact-grid {

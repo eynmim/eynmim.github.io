@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useLang } from '../context/LanguageContext';
 import { ScrollReveal } from './Hero';
+import SignalSentOverlay from './SignalSentOverlay';
 
 const terminalCommands = {
   help: {
@@ -80,12 +81,12 @@ function Terminal() {
   );
 }
 
-function ContactForm() {
+function ContactForm({ onSend }) {
   const { t } = useLang();
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const handleSubmit = (e) => {
     e.preventDefault();
-    window.location.href = `mailto:Mansouriali955@gmail.com?subject=Contact from ${form.name}&body=${encodeURIComponent(form.message)}`;
+    onSend(form);
   };
 
   return (
@@ -112,7 +113,26 @@ function ContactForm() {
 
 export default function Contact() {
   const { t } = useLang();
+  const [showSignal, setShowSignal] = useState(false);
+  const pendingForm = useRef(null);
+
+  const handleSend = useCallback((form) => {
+    pendingForm.current = form;
+    setShowSignal(true);
+  }, []);
+
+  const handleSignalDone = useCallback(() => {
+    setShowSignal(false);
+    if (pendingForm.current) {
+      const f = pendingForm.current;
+      window.location.href = `mailto:Mansouriali955@gmail.com?subject=Contact from ${f.name}&body=${encodeURIComponent(f.message)}`;
+      pendingForm.current = null;
+    }
+  }, []);
+
   return (
+    <>
+    <SignalSentOverlay visible={showSignal} onDone={handleSignalDone} />
     <section id="contact" className="portfolio-section">
       <ScrollReveal>
         <span className="tag">04 — Contact</span>
@@ -127,7 +147,7 @@ export default function Contact() {
         </ScrollReveal>
         <ScrollReveal delay={0.3}>
           <div className="glass-card" style={{ '--card-accent': '#b537f2', padding: '1.8rem' }}>
-            <ContactForm />
+            <ContactForm onSend={handleSend} />
             <div className="contact-links">
               <p className="section-sub" style={{ marginTop: '1rem', marginBottom: '0.5rem' }}>{t('contact.orUse')}</p>
               <div className="contact-link-row">
@@ -140,5 +160,6 @@ export default function Contact() {
         </ScrollReveal>
       </div>
     </section>
+    </>
   );
 }
