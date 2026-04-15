@@ -84,6 +84,17 @@ export default function Hero() {
 
   return (
     <section id="home" className="hero-section">
+      {/* SVG filter for morph blur threshold effect */}
+      <svg className="filters-svg">
+        <defs>
+          <filter id="threshold">
+            <feColorMatrix in="SourceGraphic" type="matrix"
+              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 25 -9" result="goo" />
+            <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+          </filter>
+        </defs>
+      </svg>
+
       <ScrollReveal>
         <span className="tag">Embedded Systems Engineer — Turin, Italy</span>
       </ScrollReveal>
@@ -96,12 +107,14 @@ export default function Hero() {
         </div>
       </ScrollReveal>
 
-      <p className="hero-sub">
-        <span>firmware.</span>{' '}
-        <span>hardware.</span>{' '}
-        <span>IoT.</span>{' '}
-        <span>shipped.</span>
-      </p>
+      {/* Morphing blur text — rotates between keywords */}
+      <div className="morph-container">
+        <div className="word-rotator">
+          <div className="morph-word">FIRMWARE</div>
+          <div className="morph-word">HARDWARE</div>
+          <div className="morph-word">IoT</div>
+        </div>
+      </div>
 
       <ScrollReveal delay={0.3}>
         <div
@@ -134,6 +147,13 @@ export default function Hero() {
           {'>'} {t('hero.cta')}
         </a>
       </ScrollReveal>
+
+      {/* Mouse scroll indicator */}
+      <div className="scroll-indicator">
+        <div className="scroll-mouse">
+          <div className="scroll-wheel" />
+        </div>
+      </div>
     </section>
   );
 }

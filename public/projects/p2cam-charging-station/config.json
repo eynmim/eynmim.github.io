@@ -1,0 +1,29 @@
+{
+  "title_en": "P2CAM Smart Charging Station",
+  "title_it": "Stazione di Ricarica Intelligente P2CAM",
+  "company": "P2CAM",
+  "role_en": "Embedded IoT Engineer",
+  "role_it": "Ingegnere IoT Embedded",
+  "period": "Aug 2024 - Mar 2026",
+  "description_en": "Designed a smart Li-ion charging station with RISC-V MCU (CH32X035), CN3702/CN3705 charge management ICs, 12-bit ADC voltage/temperature monitoring, addressable SK6812 RGB LEDs, and USB-PD. Engineered bulletproof EMI shielding with via fencing, guard traces, and multi-layer PCB isolation.",
+  "description_it": "Progettato una stazione di ricarica intelligente Li-ion con MCU RISC-V (CH32X035), IC di gestione carica CN3702/CN3705, monitoraggio tensione/temperatura ADC 12-bit, LED RGB SK6812 indirizzabili e USB-PD. Ingegnerizzata schermatura EMI con via fencing, guard traces e isolamento PCB multi-layer.",
+  "tags": ["RISC-V", "PCB Design", "USB-PD", "ADC", "EMI", "KiCAD", "FreeRTOS"],
+  "category": "hardware",
+  "badge": "Hardware + PCB",
+  "badgeColor": "amber",
+  "highlights_en": [
+    "RISC-V CH32X035 MCU at 48MHz with 12-bit ADC (14 channels)",
+    "CN3702/CN3705 smart charge management up to 3A input",
+    "Via fencing + guard traces for USB D+/D- EMI shielding",
+    "SK6812 addressable RGB LEDs with 47\u03a9 termination resistor",
+    "2-layer PCB with dedicated ground plane for thermal + shielding"
+  ],
+  "highlights_it": [
+    "MCU RISC-V CH32X035 a 48MHz con ADC 12-bit (14 canali)",
+    "Gestione carica intelligente CN3702/CN3705 fino a 3A",
+    "Via fencing + guard traces per schermatura EMI USB D+/D-",
+    "LED RGB SK6812 indirizzabili con resistenza terminazione 47\u03a9",
+    "PCB 2 strati con piano di massa dedicato per termico + schermatura"
+  ],
+  "github": null
+}

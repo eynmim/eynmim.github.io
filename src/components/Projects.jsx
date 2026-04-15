@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useLang } from '../context/LanguageContext';
 import { projects } from '../data/projectsData';
 import { ScrollReveal } from './Hero';
+import ProjectDetail from './ProjectDetail';
 
 const categoryColors = {
   hardware: '#ffbe0b',
@@ -48,7 +49,7 @@ function TiltCard({ children, color }) {
   );
 }
 
-function ProjectCard({ project, index }) {
+function ProjectCard({ project, index, onOpenDetail }) {
   const { lang, t } = useLang();
   const [expanded, setExpanded] = useState(false);
   const color = categoryColors[project.category] || '#00f0ff';
@@ -64,8 +65,9 @@ function ProjectCard({ project, index }) {
           <span className="glass-card-period">{project.period}</span>
         </div>
 
-        {/* Image placeholder */}
-        <div className="glass-card-image" style={{ borderColor: color + '15' }}>
+        {/* Image — clickable to open project */}
+        <div className="glass-card-image" style={{ borderColor: color + '15', cursor: 'pointer' }}
+          onClick={() => onOpenDetail(project)}>
           {project.image ? (
             <img src={project.image} alt={project.title[lang]} />
           ) : (
@@ -79,8 +81,9 @@ function ProjectCard({ project, index }) {
           )}
         </div>
 
-        {/* Content */}
-        <h3 className="glass-card-title">{project.title[lang]}</h3>
+        {/* Title — clickable to open project */}
+        <h3 className="glass-card-title" style={{ cursor: 'pointer' }}
+          onClick={() => onOpenDetail(project)}>{project.title[lang]}</h3>
         <p className="glass-card-company" style={{ color }}>{project.company} — {project.role[lang]}</p>
         <p className="glass-card-desc">{project.description[lang]}</p>
 
@@ -93,16 +96,28 @@ function ProjectCard({ project, index }) {
           ))}
         </div>
 
-        {/* Expand */}
-        <button
-          className="glass-card-expand"
-          onClick={() => setExpanded(!expanded)}
-          style={{ color }}
-          aria-expanded={expanded}
-          aria-label={expanded ? 'Hide project details' : 'Show project details'}
-        >
-          {expanded ? '- Hide details' : '+ Show details'}
-        </button>
+        {/* Action buttons — side by side */}
+        <div className="glass-card-actions">
+          <button
+            className="glass-card-expand"
+            onClick={() => setExpanded(!expanded)}
+            style={{ color }}
+            aria-expanded={expanded}
+            aria-label={expanded ? 'Hide project details' : 'Show project details'}
+          >
+            {expanded ? '- Hide details' : '+ Show details'}
+          </button>
+
+          {(project.images?.length > 0 || project.github) && (
+            <button
+              className="glass-card-view-btn"
+              onClick={() => onOpenDetail(project)}
+              style={{ color }}
+            >
+              View Full Project
+            </button>
+          )}
+        </div>
 
         {expanded && (
           <div className="glass-card-highlights" style={{ borderColor: color + '20' }}>
@@ -125,6 +140,7 @@ function ProjectCard({ project, index }) {
 export default function Projects() {
   const { t } = useLang();
   const [filter, setFilter] = useState('all');
+  const [detailProject, setDetailProject] = useState(null);
 
   const filters = [
     { key: 'all', label: t('projects.filterAll'), color: '#00f0ff' },
@@ -135,6 +151,10 @@ export default function Projects() {
   const filtered = filter === 'all' ? projects : projects.filter((p) => p.category === filter);
 
   return (
+    <>
+    {detailProject && (
+      <ProjectDetail project={detailProject} onClose={() => setDetailProject(null)} />
+    )}
     <section id="projects" className="portfolio-section">
       <ScrollReveal>
         <span className="tag">01 — Projects</span>
@@ -165,9 +185,10 @@ export default function Projects() {
 
       <div className="cards-grid">
         {filtered.map((project, i) => (
-          <ProjectCard key={project.id} project={project} index={i} />
+          <ProjectCard key={project.id} project={project} index={i} onOpenDetail={setDetailProject} />
         ))}
       </div>
     </section>
+    </>
   );
 }

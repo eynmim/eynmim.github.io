@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { LanguageProvider } from './context/LanguageContext';
 import BootSequence from './components/BootSequence';
 import CustomCursor from './components/CustomCursor';
-import AuroraBackground from './components/AuroraBackground';
+import FractalBackground from './components/FractalBackground';
 import Navbar from './components/Navbar';
 import Marquee from './components/Marquee';
 import Hero from './components/Hero';
@@ -62,7 +62,7 @@ export default function App() {
       {booted && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}>
           <CustomCursor />
-          <AuroraBackground />
+          <FractalBackground />
           <div className="scanline-overlay" />
 
           <Navbar />

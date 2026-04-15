@@ -33,7 +33,8 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
-  const { lang, toggleLang, t } = useLang();
+  const [cvOpen, setCvOpen] = useState(false);
+  const { lang, setLang, t } = useLang();
 
   useEffect(() => {
     const onScroll = () => {
@@ -62,6 +63,7 @@ export default function Navbar() {
   ];
 
   return (
+    <>
     <motion.nav
       initial={{ y: -80 }}
       animate={{ y: 0 }}
@@ -79,24 +81,45 @@ export default function Navbar() {
           </div>
         </a>
 
-        {/* Desktop nav */}
-        <div className="nav-links">
+        {/* Desktop nav — bevel overlapping tabs */}
+        <nav className="bevel-nav">
           {navItems.map((item, i) => (
             <a
               key={item.key}
               href={item.href}
-              className={`nav-link ${activeSection === item.key ? 'active' : ''}`}
+              className={`bevel-link ${activeSection === item.key ? 'active' : ''}`}
             >
-              <span className="nav-link-num">0{i + 1}.</span>
+              <span className="bevel-num">0{i + 1}.</span>
               {t(`nav.${item.key}`)}
             </a>
           ))}
+        </nav>
 
-          <div className="nav-divider" />
+        <div className="nav-actions">
 
-          <button onClick={toggleLang} className="nav-lang-btn" aria-label={lang === 'en' ? 'Switch to Italian' : 'Switch to English'}>
-            {lang === 'en' ? 'IT' : 'EN'}
+          <button onClick={() => setCvOpen(true)} className="nav-gradient-btn nav-cv-btn" type="button" aria-label="View CV">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+            CV
           </button>
+
+          <label className="lang-switch">
+            <input
+              className="lang-switch__input"
+              type="checkbox"
+              role="switch"
+              checked={lang === 'en'}
+              onChange={() => setLang(lang === 'en' ? 'it' : 'en')}
+            />
+            <span className="lang-switch__letters" aria-hidden="true">EN</span>
+            <span className="lang-switch__letters" aria-hidden="true">IT</span>
+            <span className="lang-switch__sr">Toggle language</span>
+          </label>
         </div>
 
         {/* Mobile hamburger */}
@@ -129,11 +152,49 @@ export default function Navbar() {
               {t(`nav.${item.key}`)}
             </a>
           ))}
-          <button onClick={toggleLang} className="nav-lang-btn" style={{ marginTop: '0.5rem' }}>
-            {lang === 'en' ? 'IT' : 'EN'}
-          </button>
+          <label className="lang-switch" style={{ marginTop: '0.5rem' }}>
+            <input className="lang-switch__input" type="checkbox" role="switch"
+              checked={lang === 'en'} onChange={() => setLang(lang === 'en' ? 'it' : 'en')} />
+            <span className="lang-switch__letters" aria-hidden="true">EN</span>
+            <span className="lang-switch__letters" aria-hidden="true">IT</span>
+            <span className="lang-switch__sr">Toggle language</span>
+          </label>
         </motion.div>
       )}
     </motion.nav>
+
+    {/* CV Modal — only renders PDF when open */}
+    {cvOpen && (
+      <div className="cv-modal show" onClick={(e) => {
+        if (e.target.classList.contains('cv-modal')) setCvOpen(false);
+      }}>
+        <div className="cv-modal-content">
+          <div className="cv-modal-header">
+            <span className="cv-modal-title">Ali Mansouri — CV</span>
+            <div className="cv-modal-actions">
+              <a href="/Ali_Mansouri_CV.pdf" download className="cv-modal-download" aria-label="Download CV">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <polyline points="19 12 12 19 5 12" />
+                </svg>
+                Download
+              </a>
+              <button onClick={() => setCvOpen(false)} className="cv-modal-close" aria-label="Close">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <iframe
+            src={`/Ali_Mansouri_CV.pdf#toolbar=1&navpanes=0`}
+            className="cv-modal-iframe"
+            title="Ali Mansouri CV"
+          />
+        </div>
+      </div>
+    )}
+    </>
   );
 }
