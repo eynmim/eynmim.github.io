@@ -46,6 +46,15 @@ const CARD_DATA = [
     accent: '#39ff14',
   },
   {
+    id: 'PRJ-004',
+    title: 'NEURAL DSP',
+    subtitle: 'Life Logger',
+    detail: 'Dual-Mic Beamforming + NSNet AI',
+    grid: 'MCU: ESP32-S3',
+    data: 'esp-dsp FFT',
+    accent: '#b537f2',
+  },
+  {
     id: 'SKL-010',
     title: 'C / C++',
     subtitle: 'Firmware',

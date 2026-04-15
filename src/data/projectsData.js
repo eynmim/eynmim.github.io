@@ -104,4 +104,43 @@ export const projects = [
     badge: "Firmware",
     badgeColor: "cyan",
   },
+  {
+    id: 4,
+    title: {
+      en: "Dual-Mic Neural Noise Reduction System",
+      it: "Sistema di Riduzione Rumore Neurale a Doppio Microfono",
+    },
+    company: "Personal Project",
+    role: {
+      en: "Embedded DSP Engineer",
+      it: "Ingegnere DSP Embedded",
+    },
+    period: "2025 - Present",
+    description: {
+      en: "Real-time voice extraction system using two INMP441 MEMS microphones with beamforming and hardware-accelerated FFT spectral subtraction on ESP32-S3. Features NSNet neural noise suppression via ESP-SR, VAD-based voice detection, live dashboard with SNR metrics, and a Python WAV recorder.",
+      it: "Sistema di estrazione vocale in tempo reale con due microfoni MEMS INMP441, beamforming e sottrazione spettrale FFT accelerata in hardware su ESP32-S3. Include soppressione rumore neurale NSNet tramite ESP-SR, rilevamento vocale VAD, dashboard live con metriche SNR e registratore WAV Python.",
+    },
+    tags: ["ESP32-S3", "ESP-IDF", "DSP", "FreeRTOS", "Python", "AI/ML", "I2S"],
+    category: "firmware",
+    highlights: {
+      en: [
+        "Hardware-accelerated 512-point FFT via esp-dsp vector DSP extensions",
+        "Dual-mic beamforming for +3 dB SNR improvement",
+        "NSNet1 neural noise suppression running on-device",
+        "CD-quality 44.1 kHz 16-bit PCM audio pipeline",
+        "A/B comparison framework for quality validation",
+      ],
+      it: [
+        "FFT 512-point accelerata in hardware tramite estensioni DSP esp-dsp",
+        "Beamforming a doppio microfono per +3 dB di miglioramento SNR",
+        "Soppressione rumore neurale NSNet1 on-device",
+        "Pipeline audio PCM 16-bit a 44.1 kHz qualit\u00e0 CD",
+        "Framework di confronto A/B per validazione qualit\u00e0",
+      ],
+    },
+    image: null,
+    github: "https://github.com/eynmim/Life_logger",
+    badge: "Firmware + DSP",
+    badgeColor: "green",
+  },
 ];

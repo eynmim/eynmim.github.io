@@ -1,0 +1,221 @@
+name: Sync GitHub Projects to Portfolio
+
+on:
+  schedule:
+    - cron: '0 9 * * 0'  # Every Sunday at 9:00 AM UTC
+  workflow_dispatch:       # Manual trigger from Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Fetch repos and update projects
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            // ── CONFIG ──
+            const OWNER = 'eynmim';
+            const DATA_FILE = 'src/data/projectsData.js';
+
+            // Map of repo topics/languages to categories and colors
+            const CATEGORY_MAP = {
+              'c': { category: 'firmware', badge: 'Firmware', badgeColor: 'cyan' },
+              'c++': { category: 'firmware', badge: 'Firmware', badgeColor: 'cyan' },
+              'python': { category: 'firmware', badge: 'Python', badgeColor: 'green' },
+              'kicad': { category: 'hardware', badge: 'Hardware', badgeColor: 'amber' },
+              'pcb': { category: 'hardware', badge: 'Hardware', badgeColor: 'amber' },
+              'embedded': { category: 'firmware', badge: 'Firmware', badgeColor: 'cyan' },
+              'iot': { category: 'firmware', badge: 'IoT', badgeColor: 'cyan' },
+              'dsp': { category: 'firmware', badge: 'Firmware + DSP', badgeColor: 'green' },
+            };
+
+            // Repos to skip (forks, the portfolio itself, etc.)
+            const SKIP_REPOS = ['eynmim.github.io', '.github'];
+
+            // ── FETCH REPOS ──
+            console.log(`Fetching repos for ${OWNER}...`);
+            const { data: repos } = await github.rest.repos.listForUser({
+              username: OWNER,
+              type: 'owner',
+              sort: 'updated',
+              per_page: 50,
+            });
+
+            const ownRepos = repos.filter(r => !r.fork && !SKIP_REPOS.includes(r.name));
+            console.log(`Found ${ownRepos.length} repos (excluding forks and skipped)`);
+
+            // ── READ EXISTING PROJECTS ──
+            const existing = fs.readFileSync(DATA_FILE, 'utf-8');
+            // Extract existing GitHub URLs to avoid duplicates
+            const existingUrls = [...existing.matchAll(/github:\s*"([^"]+)"/g)].map(m => m[1]);
+            console.log(`Existing project GitHub links: ${existingUrls.length}`);
+
+            // Find the highest existing ID
+            const existingIds = [...existing.matchAll(/id:\s*(\d+)/g)].map(m => parseInt(m[1]));
+            let nextId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 100;
+
+            // ── PROCESS NEW REPOS ──
+            const newProjects = [];
+
+            for (const repo of ownRepos) {
+              const repoUrl = repo.html_url;
+
+              // Skip if already in portfolio
+              if (existingUrls.some(url => url.includes(repo.name))) {
+                console.log(`  Skipping ${repo.name} (already exists)`);
+                continue;
+              }
+
+              // Try to fetch README
+              let readme = '';
+              try {
+                const { data: readmeData } = await github.rest.repos.getReadme({
+                  owner: OWNER,
+                  repo: repo.name,
+                });
+                readme = Buffer.from(readmeData.content, 'base64').toString('utf-8');
+              } catch (e) {
+                console.log(`  No README for ${repo.name}`);
+              }
+
+              // Determine category from language, topics, or README
+              const lang = (repo.language || '').toLowerCase();
+              const topics = (repo.topics || []).map(t => t.toLowerCase());
+              const allSignals = [lang, ...topics];
+
+              let catInfo = { category: 'firmware', badge: 'Project', badgeColor: 'cyan' };
+              for (const signal of allSignals) {
+                if (CATEGORY_MAP[signal]) {
+                  catInfo = CATEGORY_MAP[signal];
+                  break;
+                }
+              }
+
+              // Extract description
+              let description = repo.description || '';
+              if (!description && readme) {
+                // Take first paragraph after the title
+                const lines = readme.split('\n').filter(l => l.trim() && !l.startsWith('#') && !l.startsWith('```') && !l.startsWith('|') && !l.startsWith('-'));
+                description = lines.slice(0, 2).join(' ').substring(0, 300);
+              }
+              if (!description) description = `${repo.name} repository`;
+
+              // Extract tags from topics, language, and README keywords
+              const tags = new Set();
+              if (repo.language) tags.add(repo.language);
+              topics.forEach(t => tags.add(t.charAt(0).toUpperCase() + t.slice(1)));
+
+              // Common embedded keywords to detect in README
+              const keywords = ['ESP32', 'STM32', 'FreeRTOS', 'KiCAD', 'Altium', 'Arduino', 'I2C', 'SPI', 'CAN', 'BLE', 'MQTT', 'LVGL', 'PCB', 'RTOS', 'DSP', 'FFT', 'Python', 'ESP-IDF'];
+              for (const kw of keywords) {
+                if (readme.includes(kw) || description.includes(kw)) {
+                  tags.add(kw);
+                }
+              }
+
+              // Extract highlights from README headers or bullet points
+              const highlights = [];
+              const bulletLines = readme.match(/^[-*] .+/gm) || [];
+              const featureLines = bulletLines
+                .map(l => l.replace(/^[-*]\s*\*?\*?/, '').replace(/\*?\*?\s*[-–—].*/, '').trim())
+                .filter(l => l.length > 10 && l.length < 120)
+                .slice(0, 4);
+              highlights.push(...featureLines);
+              if (highlights.length === 0) {
+                highlights.push(`Built with ${repo.language || 'embedded tools'}`);
+              }
+
+              const project = {
+                id: nextId++,
+                name: repo.name,
+                title: description.substring(0, 80),
+                description: description.substring(0, 300),
+                tags: [...tags].slice(0, 7),
+                category: catInfo.category,
+                badge: catInfo.badge,
+                badgeColor: catInfo.badgeColor,
+                github: repoUrl,
+                period: new Date(repo.created_at).getFullYear() + ' - ' + (repo.pushed_at ? new Date(repo.pushed_at).getFullYear() : 'Present'),
+                highlights: highlights.slice(0, 4),
+                stars: repo.stargazers_count,
+                updated: repo.pushed_at,
+              };
+
+              newProjects.push(project);
+              console.log(`  + Adding: ${repo.name} [${catInfo.badge}]`);
+            }
+
+            if (newProjects.length === 0) {
+              console.log('No new projects to add. Portfolio is up to date.');
+              return;
+            }
+
+            // ── GENERATE NEW ENTRIES ──
+            let newEntries = '';
+            for (const p of newProjects) {
+              const tagsStr = p.tags.map(t => `"${t}"`).join(', ');
+              const highlightsEn = p.highlights.map(h => `        "${h.replace(/"/g, '\\"')}",`).join('\n');
+
+              newEntries += `
+  {
+    id: ${p.id},
+    title: {
+      en: "${p.title.replace(/"/g, '\\"')}",
+      it: "${p.title.replace(/"/g, '\\"')}",
+    },
+    company: "Personal Project",
+    role: {
+      en: "Developer",
+      it: "Sviluppatore",
+    },
+    period: "${p.period}",
+    description: {
+      en: "${p.description.replace(/"/g, '\\"').replace(/\n/g, ' ')}",
+      it: "${p.description.replace(/"/g, '\\"').replace(/\n/g, ' ')}",
+    },
+    tags: [${tagsStr}],
+    category: "${p.category}",
+    highlights: {
+      en: [
+${highlightsEn}
+      ],
+      it: [
+${highlightsEn}
+      ],
+    },
+    image: null,
+    github: "${p.github}",
+    badge: "${p.badge}",
+    badgeColor: "${p.badgeColor}",
+  },`;
+            }
+
+            // Insert before the closing ];
+            const updated = existing.replace(/\n\];\s*$/, `${newEntries}\n];\n`);
+            fs.writeFileSync(DATA_FILE, updated);
+            console.log(`\nAdded ${newProjects.length} new project(s) to portfolio.`);
+
+      - name: Check for changes
+        id: changes
+        run: |
+          git diff --quiet src/data/projectsData.js && echo "changed=false" >> $GITHUB_OUTPUT || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and push
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add src/data/projectsData.js
+          git commit -m "Auto-sync: update projects from GitHub repos"
+          git push
