@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useLang } from '../context/LanguageContext';
 import PCBViewer from './PCBViewer';
 
@@ -46,7 +46,6 @@ function FloatingSchematic({ pdfSrc }) {
 
 export default function ProjectDetail({ project, onClose }) {
   const { lang } = useLang();
-  const [activeImg, setActiveImg] = useState(0);
   const images = project.images || [];
   const color = badgeColorMap[project.badgeColor] || '#00f0ff';
   const pdfImage = project.images?.find(img => img.isPdf);
@@ -113,28 +112,36 @@ export default function ProjectDetail({ project, onClose }) {
           {images.length > 0 && (
             <div className="pd-block">
               <h3 className="pd-block-title" style={{ color }}>Gallery</h3>
-              <div className="pd-fan-gallery" style={{ '--fan-cards': images.length }}>
-                {images.map((img, i) => (
-                  <div key={i} className="pd-fan-card" style={{ '--card-i': i + 1 }}
-                    onClick={() => { if (img.isPdf) window.open(img.src, '_blank'); else setActiveImg(i); }}>
-                    {img.isPdf ? (
-                      <div className="pd-fan-pdf">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                          <polyline points="14 2 14 8 20 8" />
-                        </svg>
-                        <span>PDF</span>
+              <p className="pd-block-text" style={{ marginBottom: '0.5rem', fontSize: '0.7rem', opacity: 0.55, fontFamily: 'var(--font-mono)' }}>
+                // scroll to rotate through images
+              </p>
+              <div className="pd-circle-section" style={{ '--cards': images.length }}>
+                <div className="pd-circle-sticky">
+                  <div className="pd-circle-wrapper">
+                    {images.map((img, i) => (
+                      <div
+                        key={i}
+                        data-title={img.label}
+                        className="pd-circle-card"
+                        style={{ '--card-i': i + 1, '--accent': color }}
+                        onClick={() => window.open(img.src, '_blank')}
+                      >
+                        {img.isPdf ? (
+                          <div className="pd-circle-pdf" style={{ color }}>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                              <polyline points="14 2 14 8 20 8" />
+                            </svg>
+                            <span>PDF</span>
+                          </div>
+                        ) : (
+                          <img src={img.src} alt={img.label} />
+                        )}
                       </div>
-                    ) : (<img src={img.src} alt={img.label} />)}
+                    ))}
                   </div>
-                ))}
-              </div>
-              <p className="pd-fan-label">{images[activeImg]?.label}</p>
-              {!images[activeImg]?.isPdf && (
-                <div className="pd-expanded-img">
-                  <img src={images[activeImg]?.src} alt={images[activeImg]?.label} />
                 </div>
-              )}
+              </div>
             </div>
           )}
 

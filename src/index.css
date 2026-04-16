@@ -1462,99 +1462,192 @@ body:has(.glass-card:hover) #cursor-ring {
 .pd-block { margin-bottom: 2.5rem; }
 .pd-block-title { font-family: var(--font-mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 0.8rem; }
 .pd-block-text { font-size: 0.85rem; color: var(--color-text-secondary); line-height: 1.8; }
-/* Fan/Arc Gallery */
-.pd-fan-gallery {
-  --card-width: min(140px, 22vw);
-  --radius: 300px;
-  --arc-size: 0.25;
-  --arc-center: 0.75;
-  --arc-start: calc(var(--arc-center) - var(--arc-size) / 2);
-  --arc-shift: 0;
-  --arc-shift-delta: 0.012;
-
-  position: relative;
-  width: var(--card-width);
-  aspect-ratio: 4/6;
-  margin: 2rem auto 1rem;
+/* ── CIRCULAR SCROLL GALLERY ──
+   Cards arranged on a circle. Scrolling rotates the circle
+   so each card snaps to the top (in focus: color, sharp, caption visible).
+*/
+@property --pd-rotate {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
 }
 
-.pd-fan-card {
-  --arc-step: calc(var(--arc-size) / (var(--fan-cards) - 1));
+@keyframes pd-gallery-rotate {
+  to { --pd-rotate: 1; }
+}
+
+.pd-circle-section {
+  --cards: 4;
+  position: relative;
+  /* Scroll room: 1 viewport sticky + ~70svh per card for the rotation */
+  height: calc(100svh + 70svh * var(--cards));
+  view-timeline-name: --pd-gallery;
+  view-timeline-axis: block;
+  margin: 1rem 0 2rem;
+}
+
+.pd-circle-sticky {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.pd-circle-wrapper {
+  --card-border-radius: 14px;
+  --card-width: max(160px, 18vw);
+  --card-height: calc(var(--card-width) * 6 / 4);
+  --radius: calc(var(--card-width) * var(--cards) / (2 * 3.1416));
+
+  position: absolute;
+  left: 50%;
+  top: calc(50% + var(--radius) + var(--card-height) * 2);
+  width: calc(var(--radius) * 2);
+  height: calc(var(--radius) * 2);
+  transform-origin: center center;
+  transform: translateX(-50%) rotate(calc(var(--pd-rotate) * 360deg));
+  transition: transform 300ms linear;
+  pointer-events: auto;
+
+  animation: pd-gallery-rotate linear both;
+  animation-timeline: --pd-gallery;
+  animation-range: contain 0% contain 100%;
+  animation-timing-function: steps(var(--cards));
+}
+
+.pd-circle-card {
+  /* Where this card sits along the rotation cycle (0..1) */
+  --card-phase: calc((var(--card-i) - 1) / var(--cards) - 0.75);
+  --card-pos: mod(calc(var(--card-phase) + var(--pd-rotate) + 1), 1);
+  --card-dist: min(var(--card-pos), calc(1 - var(--card-pos)));
+
+  --card-grayscale: clamp(0, calc(var(--card-dist) * var(--cards)), 1);
+  --card-opacity: calc(1 - (var(--card-dist) / 0.15));
+
+  --card-focus-range: 0.1;
+  --card-max-blur: 7px;
+  --card-norm-dist: min(var(--card-dist), var(--card-focus-range));
+  --card-blur-progress: calc(var(--card-norm-dist) / var(--card-focus-range));
+  --card-blur: calc(var(--card-blur-progress) * var(--card-max-blur));
+
+  --caption-active: clamp(0, 1 - (var(--card-dist) / 0.001), 1);
+  --caption-opacity: var(--caption-active);
+  --caption-y: calc(-150px * (1 - var(--caption-active)));
+
+  filter: blur(var(--card-blur)) grayscale(var(--card-grayscale));
+  opacity: var(--card-opacity);
+  container: size;
+
+  offset-path: circle(var(--radius) at 50% 50%);
+  offset-distance: calc((var(--card-i) - 1) / var(--cards) * 100%);
+  offset-rotate: auto;
+  offset-anchor: 50% 100%;
 
   position: absolute;
   width: var(--card-width);
   aspect-ratio: 4/6;
-  background: #111;
-  border-radius: 8px;
+  border-radius: var(--card-border-radius);
   overflow: hidden;
+  background: #0a1018;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+  transition: all 300ms ease-in-out;
   cursor: pointer;
-  border: 1px solid rgba(255,255,255,0.1);
-  transition: all 800ms linear(0, 0.01 0.8%, 0.038 1.6%, 0.154 3.4%, 0.781 9.7%, 1.01 12.5%, 1.089 13.8%, 1.153 15.2%, 1.195 16.6%, 1.219 18%, 1.224 19.7%, 1.208 21.6%, 1.172 23.6%, 1.057 28.6%, 1.007 31.2%, 0.969 34.1%, 0.951 37.1%, 0.953 40.9%, 0.998 50.4%, 1);
-
-  offset-path: circle(var(--radius) at 50% 100%);
-  offset-distance: calc(
-    (var(--arc-start) + (var(--card-i) - 1) * var(--arc-step) + var(--arc-shift)) * 100%
-  );
-  offset-rotate: auto;
-  offset-anchor: 50% 0%;
 }
 
-/* Z-index layering — center cards on top */
-.pd-fan-card:nth-child(1) { z-index: 1; }
-.pd-fan-card:nth-child(2) { z-index: 3; }
-.pd-fan-card:nth-child(3) { z-index: 4; }
-.pd-fan-card:nth-child(4) { z-index: 2; }
-
-/* Hover: lift card + push neighbors */
-.pd-fan-card:hover {
-  offset-anchor: 50% 12%;
-  border-color: rgba(255,190,11,0.4);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+.pd-circle-card::after {
+  content: attr(data-title);
+  position: absolute;
+  top: calc(100% + 0.6rem);
+  left: 50%;
+  translate: calc(-50%) var(--caption-y);
+  opacity: var(--caption-opacity);
+  font-family: var(--font-mono);
+  font-size: clamp(0.7rem, 1vw + 0.2rem, 0.9rem);
+  letter-spacing: 0.05em;
+  color: var(--accent, var(--color-cyan));
+  text-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+  white-space: nowrap;
+  transition: opacity 300ms ease-in-out, translate 300ms ease-in-out;
+  pointer-events: none;
 }
-.pd-fan-card:hover + .pd-fan-card { --arc-shift: calc(var(--arc-shift-delta) * 3); }
-.pd-fan-card:hover + .pd-fan-card + .pd-fan-card { --arc-shift: calc(var(--arc-shift-delta) * 2); }
-.pd-fan-card:hover + .pd-fan-card + .pd-fan-card + .pd-fan-card { --arc-shift: calc(var(--arc-shift-delta) * 1); }
-.pd-fan-card:has(+ .pd-fan-card:hover) { --arc-shift: calc(var(--arc-shift-delta) * -3); }
-.pd-fan-card:has(+ .pd-fan-card + .pd-fan-card:hover) { --arc-shift: calc(var(--arc-shift-delta) * -2); }
-.pd-fan-card:has(+ .pd-fan-card + .pd-fan-card + .pd-fan-card:hover) { --arc-shift: calc(var(--arc-shift-delta) * -1); }
 
-.pd-fan-card > img {
-  width: 100%; height: 100%;
-  object-fit: cover; display: block;
+.pd-circle-card > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   border-radius: inherit;
+  display: block;
 }
 
-.pd-fan-pdf {
-  width: 100%; height: 100%;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 0.3rem; background: rgba(0,0,0,0.6);
+.pd-circle-pdf {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.85);
 }
-.pd-fan-pdf span {
-  font-family: var(--font-mono); font-size: 0.6rem;
-  font-weight: 700; color: var(--color-text-muted);
+.pd-circle-pdf span {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
 }
 
-.pd-fan-label {
-  text-align: center; font-family: var(--font-mono);
-  font-size: 0.6rem; color: var(--color-text-muted);
-  margin-top: 0.8rem;
-}
-
-/* Expanded selected image */
-.pd-expanded-img {
-  margin-top: 1.5rem;
-  border-radius: 12px; overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.06);
-  background: rgba(0,0,0,0.3);
-}
-.pd-expanded-img img {
-  width: 100%; height: auto; display: block;
-  max-height: 50vh; object-fit: contain;
+/* Fallback for browsers without animation-timeline (Firefox/older Safari).
+   Renders the gallery as a normal responsive grid. */
+@supports not (animation-timeline: --x) {
+  .pd-circle-section {
+    height: auto;
+    margin: 1.5rem 0;
+  }
+  .pd-circle-sticky {
+    position: static;
+    height: auto;
+    display: block;
+    pointer-events: auto;
+  }
+  .pd-circle-wrapper {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: 100%;
+    height: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    transform: none;
+    animation: none;
+  }
+  .pd-circle-card {
+    position: relative;
+    offset-path: none;
+    offset-distance: 0;
+    offset-anchor: auto;
+    filter: none;
+    opacity: 1;
+    width: 100%;
+    aspect-ratio: 4/6;
+  }
+  .pd-circle-card::after {
+    position: static;
+    opacity: 1;
+    translate: none;
+    display: block;
+    margin-top: 0.5rem;
+    text-align: center;
+  }
 }
 
 @media (max-width: 600px) {
-  .pd-fan-gallery { --card-width: 80px; --radius: 180px; }
+  .pd-circle-wrapper { --card-width: max(120px, 30vw); }
+  .pd-circle-section { height: calc(100svh + 55svh * var(--cards)); }
 }
 .pd-highlights-full { list-style: none; }
 .pd-highlights-full li { display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem; line-height: 1.7; }
