@@ -53,27 +53,36 @@ function Terminal() {
   };
 
   return (
-    <div className="glass-card terminal-card" style={{ '--card-accent': '#00f0ff' }}
-      onClick={() => inputRef.current?.focus()}>
+    <div
+      className="glass-card terminal-card"
+      style={{ '--card-accent': '#00f0ff' }}
+      onClick={() => inputRef.current?.focus()}
+    >
       <div className="terminal-header">
         <div className="terminal-dots">
-          <span style={{ background: '#ff2d6b' }} />
-          <span style={{ background: '#ffbe0b' }} />
-          <span style={{ background: '#39ff14' }} />
+          <span className="terminal-dot terminal-dot--red" />
+          <span className="terminal-dot terminal-dot--amber" />
+          <span className="terminal-dot terminal-dot--green" />
         </div>
         <span className="terminal-label">AM-Terminal</span>
       </div>
       <div className="terminal-body">
         {history.map((line, i) => (
-          <div key={i} className="terminal-line" style={{
-            color: line.type === 'input' ? '#39ff14' : line.type === 'error' ? '#ff2d6b' : line.type === 'system' ? '#00f0ff' : '#8892a4'
-          }}>{line.text}</div>
+          <div key={i} className={`terminal-line terminal-line--${line.type}`}>
+            {line.text}
+          </div>
         ))}
         <form onSubmit={handleCommand} className="terminal-input-row">
-          <span style={{ color: '#39ff14' }}>ali@terminal:~$&nbsp;</span>
-          <input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)}
-            className="terminal-input" spellCheck={false} autoComplete="off"
-            aria-label="Terminal command input" />
+          <span className="terminal-prompt">ali@terminal:~$&nbsp;</span>
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            className="terminal-input"
+            spellCheck={false}
+            autoComplete="off"
+            aria-label="Terminal command input"
+          />
         </form>
         <div ref={bottomRef} />
       </div>
