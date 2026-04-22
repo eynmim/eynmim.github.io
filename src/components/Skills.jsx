@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { memo, useState, useEffect, useRef } from 'react';
 import { useLang } from '../context/LanguageContext';
 import { skillCategories } from '../data/skillsData';
 import { ScrollReveal } from './Hero';
@@ -57,7 +57,7 @@ function SpotlightCanvas() {
   return <canvas ref={canvasRef} className="spotlight-canvas" />;
 }
 
-function SkillBar({ name, level, color, delay }) {
+const SkillBar = memo(function SkillBar({ name, level, color, delay }) {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
 
@@ -82,16 +82,15 @@ function SkillBar({ name, level, color, delay }) {
         <div
           className="skill-bar-fill"
           style={{
-            width: visible ? `${level}%` : '0%',
-            background: `linear-gradient(90deg, ${color}44, ${color})`,
-            boxShadow: `0 0 8px ${color}44`,
-            transitionDelay: `${delay}s`,
+            '--fill-width': visible ? `${level}%` : '0%',
+            '--fill-color': color,
+            '--fill-delay': `${delay}s`,
           }}
         />
       </div>
     </div>
   );
-}
+});
 
 export default function Skills() {
   const { lang, t } = useLang();

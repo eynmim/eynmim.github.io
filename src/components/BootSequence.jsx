@@ -39,7 +39,6 @@ export default function BootSequence({ onComplete }) {
     return () => { timers.forEach(clearTimeout); clearTimeout(done); };
   }, [onComplete]);
 
-  // Skip on any keypress or click
   useEffect(() => {
     const skip = () => onComplete();
     window.addEventListener('keydown', skip, { once: true });
@@ -49,80 +48,50 @@ export default function BootSequence({ onComplete }) {
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-[200] flex items-center justify-center"
-        style={{ backgroundColor: '#050a0e' }}
+        className="boot-backdrop"
         exit={{ opacity: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <div className="w-full max-w-2xl px-6">
-          {/* Terminal window frame */}
-          <div
-            className="rounded-lg overflow-hidden"
-            style={{
-              border: '1px solid #00f0ff33',
-              boxShadow: '0 0 30px #00f0ff11, 0 0 60px #00f0ff08',
-            }}
-          >
-            {/* Title bar */}
-            <div className="flex items-center gap-2 px-4 py-2.5 border-b"
-              style={{ backgroundColor: '#00f0ff08', borderColor: '#00f0ff22' }}>
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ff2d6b' }} />
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ffbe0b' }} />
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#39ff14' }} />
-              <span className="ml-3 font-mono text-xs" style={{ color: '#3e4a5c' }}>
-                AM-BIOS v2.0
-              </span>
+        <div className="boot-shell">
+          <div className="boot-window">
+            <div className="boot-titlebar">
+              <span className="boot-dot boot-dot--red" />
+              <span className="boot-dot boot-dot--amber" />
+              <span className="boot-dot boot-dot--green" />
+              <span className="boot-titlebar-label">AM-BIOS v2.0</span>
             </div>
 
-            {/* Boot content */}
-            <div className="p-5 font-mono text-xs leading-6 min-h-[350px]"
-              style={{ backgroundColor: '#050a0eee' }}>
+            <div className="boot-logs">
               {visibleLines.map((line, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.1 }}
-                  className="flex justify-between"
+                  className="boot-log-line"
                   style={{ color: line.color || '#e2e8f0' }}
                 >
                   <span>{line.text}</span>
-                  {line.status && (
-                    <span style={{ color: '#39ff14' }}>[{line.status}]</span>
-                  )}
+                  {line.status && <span className="boot-log-status">[{line.status}]</span>}
                 </motion.div>
               ))}
-              <span className="inline-block w-2 h-3.5 mt-1 animate-blink"
-                style={{ backgroundColor: '#00f0ff' }} />
+              <span className="boot-caret animate-blink" />
             </div>
 
-            {/* Progress */}
-            <div className="px-5 py-3 border-t" style={{ borderColor: '#00f0ff15', backgroundColor: '#0a101808' }}>
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#050a0e' }}>
-                  <motion.div
-                    className="h-full rounded-full"
-                    style={{
-                      background: 'linear-gradient(90deg, #00f0ff, #39ff14)',
-                      boxShadow: '0 0 10px #00f0ff66',
-                    }}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progress}%` }}
-                    transition={{ duration: 0.2 }}
-                  />
-                </div>
-                <span className="font-mono text-xs" style={{ color: '#00f0ff' }}>
-                  {progress}%
-                </span>
+            <div className="boot-progress-row">
+              <div className="boot-progress-track">
+                <motion.div
+                  className="boot-progress-fill"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.2 }}
+                />
               </div>
+              <span className="boot-progress-label">{progress}%</span>
             </div>
           </div>
 
-          <button
-            onClick={onComplete}
-            className="mt-4 font-mono text-xs block mx-auto cursor-pointer bg-transparent border-none"
-            style={{ color: '#3e4a5c' }}
-          >
+          <button onClick={onComplete} className="boot-skip-btn">
             Click or press any key to skip...
           </button>
         </div>
