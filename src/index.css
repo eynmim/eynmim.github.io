@@ -1463,64 +1463,52 @@ body:has(.glass-card:hover) #cursor-ring {
 .pd-block-title { font-family: var(--font-mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 0.8rem; }
 .pd-block-text { font-size: 0.85rem; color: var(--color-text-secondary); line-height: 1.8; }
 /* ── CIRCULAR SCROLL GALLERY ──
-   Cards arranged on a circle. Scrolling rotates the circle
-   so each card snaps to the top (in focus: color, sharp, caption visible).
+   Cards arranged on a circle. JS updates --pd-rotate as the user scrolls
+   the section, snapping each card to the top (in focus: color, sharp, caption).
 */
-@property --pd-rotate {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 0;
-}
-
-@keyframes pd-gallery-rotate {
-  to { --pd-rotate: 1; }
-}
-
 .pd-circle-section {
   --cards: 4;
+  --card-width: clamp(140px, 16vw, 230px);
+  --card-height: calc(var(--card-width) * 6 / 4);
+  --radius: calc(var(--card-width) * var(--cards) / (2 * 3.1416));
+  /* Just the focused card + a bit of breathing room.
+     The rest of the circle (invisible cards) overflows below. */
+  --sticky-h: calc(var(--card-height) + 1.5rem);
+
   position: relative;
-  /* Scroll room: 1 viewport sticky + ~70svh per card for the rotation */
-  height: calc(100svh + 70svh * var(--cards));
-  view-timeline-name: --pd-gallery;
-  view-timeline-axis: block;
-  margin: 1rem 0 2rem;
+  /* Sticky box + rotation scroll room (~22svh per card) */
+  height: calc(var(--sticky-h) + 22svh * var(--cards));
+  margin: 0.5rem 0 0;
 }
 
 .pd-circle-sticky {
   position: sticky;
   top: 0;
-  height: 100svh;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  pointer-events: none;
+  height: var(--sticky-h);
+  overflow: visible;
+  padding-top: 0.5rem;
 }
 
 .pd-circle-wrapper {
   --card-border-radius: 14px;
-  --card-width: max(160px, 18vw);
-  --card-height: calc(var(--card-width) * 6 / 4);
-  --radius: calc(var(--card-width) * var(--cards) / (2 * 3.1416));
+  --pd-rotate: 0;
 
   position: absolute;
   left: 50%;
-  top: calc(50% + var(--radius) + var(--card-height) * 2);
+  /* Wrapper-top sits at card-height down from sticky-top,
+     so the focused card (which extends UP from the circle top)
+     sits right at the sticky's top edge. */
+  top: calc(var(--card-height) + 0.5rem);
   width: calc(var(--radius) * 2);
   height: calc(var(--radius) * 2);
   transform-origin: center center;
   transform: translateX(-50%) rotate(calc(var(--pd-rotate) * 360deg));
-  transition: transform 300ms linear;
-  pointer-events: auto;
-
-  animation: pd-gallery-rotate linear both;
-  animation-timeline: --pd-gallery;
-  animation-range: contain 0% contain 100%;
-  animation-timing-function: steps(var(--cards));
+  transition: transform 500ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 .pd-circle-card {
-  /* Where this card sits along the rotation cycle (0..1) */
-  --card-phase: calc((var(--card-i) - 1) / var(--cards) - 0.75);
+  /* card-i=1 starts at the TOP (focused); subsequent cards counter-clockwise */
+  --card-phase: calc(-1 * (var(--card-i) - 1) / var(--cards));
   --card-pos: mod(calc(var(--card-phase) + var(--pd-rotate) + 1), 1);
   --card-dist: min(var(--card-pos), calc(1 - var(--card-pos)));
 
@@ -1539,10 +1527,9 @@ body:has(.glass-card:hover) #cursor-ring {
 
   filter: blur(var(--card-blur)) grayscale(var(--card-grayscale));
   opacity: var(--card-opacity);
-  container: size;
 
   offset-path: circle(var(--radius) at 50% 50%);
-  offset-distance: calc((var(--card-i) - 1) / var(--cards) * 100%);
+  offset-distance: var(--card-offset, 0%);
   offset-rotate: auto;
   offset-anchor: 50% 100%;
 
@@ -1561,9 +1548,9 @@ body:has(.glass-card:hover) #cursor-ring {
 .pd-circle-card::after {
   content: attr(data-title);
   position: absolute;
-  top: calc(100% + 0.6rem);
+  bottom: calc(100% + 0.8rem);
   left: 50%;
-  translate: calc(-50%) var(--caption-y);
+  translate: -50% calc(var(--caption-y) * -1);
   opacity: var(--caption-opacity);
   font-family: var(--font-mono);
   font-size: clamp(0.7rem, 1vw + 0.2rem, 0.9rem);
@@ -1600,9 +1587,9 @@ body:has(.glass-card:hover) #cursor-ring {
   letter-spacing: 0.15em;
 }
 
-/* Fallback for browsers without animation-timeline (Firefox/older Safari).
-   Renders the gallery as a normal responsive grid. */
-@supports not (animation-timeline: --x) {
+/* Fallback for browsers without offset-path support:
+   render the gallery as a simple responsive grid. */
+@supports not (offset-path: circle(100px at 50% 50%)) {
   .pd-circle-section {
     height: auto;
     margin: 1.5rem 0;
@@ -1611,25 +1598,17 @@ body:has(.glass-card:hover) #cursor-ring {
     position: static;
     height: auto;
     display: block;
-    pointer-events: auto;
   }
   .pd-circle-wrapper {
-    position: relative;
-    left: auto;
-    top: auto;
     width: 100%;
     height: auto;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 1rem;
     transform: none;
-    animation: none;
   }
   .pd-circle-card {
     position: relative;
-    offset-path: none;
-    offset-distance: 0;
-    offset-anchor: auto;
     filter: none;
     opacity: 1;
     width: 100%;
@@ -1647,7 +1626,77 @@ body:has(.glass-card:hover) #cursor-ring {
 
 @media (max-width: 600px) {
   .pd-circle-wrapper { --card-width: max(120px, 30vw); }
-  .pd-circle-section { height: calc(100svh + 55svh * var(--cards)); }
+  .pd-circle-section { height: calc(100svh + 30svh * var(--cards)); }
+}
+
+/* ── IMAGE LIGHTBOX ── */
+.pd-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(2, 6, 10, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem 2rem;
+  cursor: zoom-out;
+  animation: pd-lb-in 240ms ease-out;
+}
+
+@keyframes pd-lb-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.pd-lightbox img {
+  max-width: 92vw;
+  max-height: 82vh;
+  object-fit: contain;
+  border-radius: 10px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  cursor: default;
+  animation: pd-lb-zoom 260ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes pd-lb-zoom {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.pd-lightbox-close {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 200ms, border-color 200ms, transform 200ms;
+  z-index: 1;
+}
+
+.pd-lightbox-close:hover {
+  background: rgba(255, 45, 107, 0.2);
+  border-color: rgba(255, 45, 107, 0.5);
+  transform: rotate(90deg);
+}
+
+.pd-lightbox-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  margin-top: 1.2rem;
+  text-transform: uppercase;
 }
 .pd-highlights-full { list-style: none; }
 .pd-highlights-full li { display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 0.5rem; line-height: 1.7; }

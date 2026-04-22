@@ -1,6 +1,105 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLang } from '../context/LanguageContext';
 import PCBViewer from './PCBViewer';
+
+function CircleGallery({ images, color, onImageClick }) {
+  const sectionRef = useRef(null);
+  const [rotate, setRotate] = useState(0);
+  const cards = images.length;
+
+  useEffect(() => {
+    const scrollEl = document.querySelector('.pd-scroll');
+    const section = sectionRef.current;
+    if (!scrollEl || !section) return;
+
+    const maxRotate = (cards - 1) / cards;
+
+    const onScroll = () => {
+      const rect = section.getBoundingClientRect();
+      const scrollRect = scrollEl.getBoundingClientRect();
+      const sectionTopOffset = rect.top - scrollRect.top;
+      const scrollableRange = rect.height - scrollRect.height;
+      if (scrollableRange <= 0) return;
+      let progress = -sectionTopOffset / scrollableRange;
+      progress = Math.max(0, Math.min(1, progress));
+      const stepped = Math.min(maxRotate, Math.round(progress * cards) / cards);
+      setRotate(stepped);
+    };
+
+    scrollEl.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => scrollEl.removeEventListener('scroll', onScroll);
+  }, [cards]);
+
+  const handleClick = (img) => {
+    if (img.isPdf) window.open(img.src, '_blank');
+    else onImageClick?.(img);
+  };
+
+  return (
+    <div ref={sectionRef} className="pd-circle-section" style={{ '--cards': cards }}>
+      <div className="pd-circle-sticky">
+        <div className="pd-circle-wrapper" style={{ '--pd-rotate': rotate }}>
+          {images.map((img, i) => {
+            // Place card-i=1 at 12 o'clock (75% on offset-path circle),
+            // subsequent cards CCW around the circle.
+            const offsetPct = ((75 - (i / cards) * 100) % 100 + 100) % 100;
+            return (
+            <div
+              key={i}
+              data-title={img.label}
+              className="pd-circle-card"
+              style={{ '--card-i': i + 1, '--card-offset': `${offsetPct}%`, '--accent': color }}
+              onClick={() => handleClick(img)}
+            >
+              {img.isPdf ? (
+                <div className="pd-circle-pdf" style={{ color }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                  </svg>
+                  <span>PDF</span>
+                </div>
+              ) : (
+                <img src={img.src} alt={img.label} />
+              )}
+            </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Lightbox({ image, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [onClose]);
+
+  return (
+    <div className="pd-lightbox" onClick={onClose} role="dialog" aria-modal="true">
+      <button className="pd-lightbox-close" onClick={onClose} aria-label="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+      <img
+        src={image.src}
+        alt={image.label}
+        onClick={(e) => e.stopPropagation()}
+      />
+      <p className="pd-lightbox-label">{image.label}</p>
+    </div>
+  );
+}
 
 const badgeColorMap = {
   amber: '#ffbe0b',
@@ -46,12 +145,14 @@ function FloatingSchematic({ pdfSrc }) {
 
 export default function ProjectDetail({ project, onClose }) {
   const { lang } = useLang();
+  const [lightboxImage, setLightboxImage] = useState(null);
   const images = project.images || [];
   const color = badgeColorMap[project.badgeColor] || '#00f0ff';
   const pdfImage = project.images?.find(img => img.isPdf);
 
   return (
     <div className="pd-fullpage">
+      {lightboxImage && <Lightbox image={lightboxImage} onClose={() => setLightboxImage(null)} />}
       {project.glb && <PCBViewer glbPath={project.glb} className="pd-pcb-fullbg" />}
       <div className="pd-overlay" />
 
@@ -115,33 +216,7 @@ export default function ProjectDetail({ project, onClose }) {
               <p className="pd-block-text" style={{ marginBottom: '0.5rem', fontSize: '0.7rem', opacity: 0.55, fontFamily: 'var(--font-mono)' }}>
                 // scroll to rotate through images
               </p>
-              <div className="pd-circle-section" style={{ '--cards': images.length }}>
-                <div className="pd-circle-sticky">
-                  <div className="pd-circle-wrapper">
-                    {images.map((img, i) => (
-                      <div
-                        key={i}
-                        data-title={img.label}
-                        className="pd-circle-card"
-                        style={{ '--card-i': i + 1, '--accent': color }}
-                        onClick={() => window.open(img.src, '_blank')}
-                      >
-                        {img.isPdf ? (
-                          <div className="pd-circle-pdf" style={{ color }}>
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                              <polyline points="14 2 14 8 20 8" />
-                            </svg>
-                            <span>PDF</span>
-                          </div>
-                        ) : (
-                          <img src={img.src} alt={img.label} />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <CircleGallery images={images} color={color} onImageClick={setLightboxImage} />
             </div>
           )}
 
