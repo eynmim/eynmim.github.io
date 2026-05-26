@@ -45,7 +45,7 @@ export const projects = [
       en: "Embedded IoT Engineer",
       it: "Ingegnere IoT Embedded",
     },
-    period: "Aug 2024 - Mar 2026",
+    period: "Aug 2024 - Apr 2026",
     description: {
       en: "Designed a smart Li-ion charging station with RISC-V MCU (CH32X035), CN3702/CN3705 charge management ICs, 12-bit ADC voltage/temperature monitoring, addressable SK6812 RGB LEDs, and USB-PD. Engineered bulletproof EMI shielding with via fencing, guard traces, and multi-layer PCB isolation.",
       it: "Progettato una stazione di ricarica intelligente Li-ion con MCU RISC-V (CH32X035), IC di gestione carica CN3702/CN3705, monitoraggio tensione/temperatura ADC 12-bit, LED RGB SK6812 indirizzabili e USB-PD. Ingegnerizzata schermatura EMI con via fencing, guard traces e isolamento PCB multi-layer.",

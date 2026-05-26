@@ -2,3 +2,9 @@ node_modules
 dist
 .DS_Store
 *.local
+
+# job-scraper local state
+job-scraper/helper/.env
+job-scraper/helper/.venv/
+job-scraper/helper/__pycache__/
+job-scraper/helper/cache/
