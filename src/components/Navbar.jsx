@@ -47,7 +47,11 @@ export default function Navbar() {
     >
       <div className="nav-inner">
         {/* Logo */}
-        <a href="#home" className="nav-logo">
+        <a
+          href="#home"
+          className="nav-logo"
+          onClick={() => window.dispatchEvent(new CustomEvent('nav:section', { detail: 'home' }))}
+        >
           <AMChipLogo />
           <div className="nav-logo-text">
             <span className="nav-logo-name">Ali Mansouri</span>
@@ -62,6 +66,7 @@ export default function Navbar() {
               key={item.key}
               href={item.href}
               className={`bevel-link ${activeSection === item.key ? 'active' : ''}`}
+              onClick={() => window.dispatchEvent(new CustomEvent('nav:section', { detail: item.key }))}
             >
               <span className="bevel-num">0{i + 1}.</span>
               {t(`nav.${item.key}`)}
@@ -119,7 +124,10 @@ export default function Navbar() {
             <a
               key={item.key}
               href={item.href}
-              onClick={() => setMobileOpen(false)}
+              onClick={() => {
+                setMobileOpen(false);
+                window.dispatchEvent(new CustomEvent('nav:section', { detail: item.key }));
+              }}
               className={`nav-mobile-link ${activeSection === item.key ? 'active' : ''}`}
             >
               <span className="nav-link-num">0{i + 1}.</span>

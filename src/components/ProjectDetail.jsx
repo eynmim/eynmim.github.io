@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLang } from '../context/LanguageContext';
 import PCBViewer from './PCBViewer';
 import CircleGallery from './CircleGallery';
@@ -17,6 +17,13 @@ export default function ProjectDetail({ project, onClose }) {
   const images = project.images || [];
   const color = badgeColorMap[project.badgeColor] || '#00f0ff';
   const pdfImage = images.find((img) => img.isPdf);
+
+  // Close this overlay when navbar fires a section navigation
+  useEffect(() => {
+    const onNav = () => onClose();
+    window.addEventListener('nav:section', onNav);
+    return () => window.removeEventListener('nav:section', onNav);
+  }, [onClose]);
 
   return (
     <div className="pd-fullpage">
