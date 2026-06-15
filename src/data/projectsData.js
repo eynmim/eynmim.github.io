@@ -72,7 +72,6 @@ export const projects = [
       { src: "/projects/p2cam-charging-station/p2cam-3d-back.png", label: "3D Render — Top (Components)" },
       { src: "/projects/p2cam-charging-station/p2cam-3d-front.png", label: "3D Render — Bottom" },
       { src: "/projects/p2cam-charging-station/p2cam-pcb-layout.png", label: "PCB Layout (KiCAD)" },
-      { src: "/projects/p2cam-charging-station/Schematic.pdf", label: "Full Schematic (PDF)", isPdf: true },
     ],
     image: "/projects/p2cam-charging-station/p2cam-3d-back.png",
     glb: "/projects/p2cam-charging-station/p2cam-pcb.glb",
