@@ -254,3 +254,110 @@ place — a mark, not a placeholder.
 ---
 
 # 10. RESPONSIVE / MOBILE — _TBD_
+
+---
+
+# 11. HERO MOODBOARD / MOTION GRAPHIC
+
+Vertical scrapbook-style collage of Ali's world — used as a layered motion
+graphic on the site (parallax, ken-burns, slight glitch). Inspired by the
+Pinterest "Electronics" aesthetic moodboards: warm sepia, handmade,
+overlapping photo cutouts, not an AI-clean grid.
+
+## Paste-ready prompt for ChatGPT / DALL·E 3 / GPT-Image-1
+
+```
+Create a vertical 9:16 aesthetic moodboard collage — Pinterest scrapbook
+style, handmade and curated, NOT an AI-clean grid.
+
+## Subject
+The personal moodboard of Ali Mansouri, an embedded systems engineer
+working on real hardware and firmware projects. Each cutout is a fragment
+of his actual world: PCBs, workshops, notebooks, blueprints, and the
+sci-fi imagination that got him here.
+
+## Composition
+- Portrait 9:16, filling the whole frame edge to edge.
+- 14–18 overlapping rectangular photo cutouts, rotated ±2°–8°, some with
+  a thin white Polaroid margin, some with torn paper edges, some clean.
+- Layered depth: subtle drop shadows under some cutouts so it reads
+  like real paper scraps on a workbench.
+- No clean grid, no even spacing — controlled chaos. Small gaps let a
+  warm off-white paper background peek through.
+- One large hand-written / editorial serif word "EMBEDDED" set diagonally
+  across the middle third, semi-transparent, letting the photos behind it
+  show through (like the word "Electronics" in the reference boards).
+
+## What each cutout shows (mix real photography + technical drawing)
+- A close-up of a green/blue 4-layer PCB with via fencing and guard
+  traces around USB D+/D- lines.
+- A macro shot of a small charging-station PCB with tiny addressable
+  RGB LEDs glowing.
+- A solar-panel fixed-wing UAV silhouetted over alpine mountains at
+  golden hour.
+- An STM32 dev board with rainbow ribbon cables plugged in, wires
+  spilling off the edge.
+- A handwritten engineering notebook page: mixed schematic sketches,
+  Ohm's law "V = I·R", timing diagrams, and casual margin notes in
+  English + Italian.
+- A blueprint-style KiCAD schematic sheet: net labels, IC symbols,
+  decoupling caps — printed on cyanotype-blue paper.
+- A vintage textbook page about signal theory / RTOS scheduling,
+  slightly yellowed with age.
+- A pencil-sketch Ghibli / Studio-Ghibli-style illustration of a
+  friendly Laputa-type robot working at an electronics bench under
+  a warm lamp.
+- A gloved hand holding SMD tweezers over a PCB under a magnifier lamp
+  (no face visible).
+- An oscilloscope CRT screen showing a clean SPI clock waveform in
+  green phosphor.
+- A soldering iron, desoldering wick, and flux bottle on a worn
+  wooden bench.
+- A 3D render of a compact 2-layer PCB from an isometric angle.
+- A torn corner of paper with the words "Ali Mansouri" hand-lettered
+  in ballpoint pen.
+- A photograph of a robotic-arm control system with visible motor drivers.
+
+## Palette + finish
+- Overall: warm sepia and off-white paper base, Kodak Portra 400 film
+  look, gentle grain, slight vignette.
+- Accent color: threads of electric cyan (#00f0ff) — an LED glow, a
+  KiCAD trace, one signal line — punching through the warmth so it
+  ties back to a cyberpunk-cyan brand palette. Cyan should feel like
+  a signal cutting through paper, not a filter over everything.
+- Slight age: coffee-ring stains, folded creases, one piece of masking
+  tape holding a corner down.
+- Absolutely no glossy hyper-realism, no 3D-render sheen over the
+  whole board, no clean vector illustration style.
+
+## Avoid
+- Faces (unless clearly a sketch/illustration, no photorealistic
+  people).
+- Any text longer than a single word or short equation — text-heavy
+  areas should read as texture, not something to be parsed.
+- Neon / rave / cyberpunk over-saturation. This is a workbench, not
+  a Blade Runner poster.
+- Corporate stock-photo cleanliness.
+- Any watermarks, logos of real companies, or brand names.
+
+## Composition variant to also generate
+After the 9:16 hero version, produce a 16:9 landscape variant of the
+same board — same aesthetic, same elements, re-composed to fit wide.
+I'll use it as a section background.
+
+## Why this exists
+This will be the hero motion graphic on my portfolio. Individual
+cutouts will be separated in post and parallax-animated (different
+depth layers moving at different speeds on scroll). So please keep
+the cutouts feeling distinct and separable — avoid blending them
+into one photorealistic scene.
+```
+
+**Palette swap for the on-brand cyan direction (Option A):**
+> Replace the palette + finish block with: _"Overall: cool near-black
+> background (#050a0e), scanned photos color-graded toward cyan and
+> electric blue, feeling like a CRT phosphor display. Cyan #00f0ff is
+> the dominant ink; sepia only appears in the anime / notebook cutouts
+> for warmth contrast. Slight CRT scanlines and light bloom on the
+> brightest highlights."_
+

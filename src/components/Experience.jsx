@@ -1,100 +1,58 @@
-import { useLang } from '../context/LanguageContext';
 import { ScrollReveal } from './Hero';
 
-const experiences = [
+const XP = [
   {
-    company: "P2CAM",
-    role: { en: "IoT Engineer", it: "Ingegnere IoT" },
-    period: "Aug 2024 - Jan 2026",
-    type: { en: "Part-Time", it: "Part-Time" },
-    description: {
-      en: "Designed custom PCBs with ESP32 for BLE communication. Embedded AI object detection on microcontrollers with LVGL interfaces.",
-      it: "Progettato PCB custom con ESP32 per BLE. Rilevamento oggetti AI su MCU con interfacce LVGL.",
-    },
-    tags: ["ESP32", "BLE", "LVGL", "AI/ML"],
-    color: "#00f0ff",
+    org: 'P2CAM', role: 'Embedded IoT Engineer', period: 'Aug 2024 – Mar 2026',
+    body: 'Led the end-to-end firmware of a battery-powered IoT camera on ESP32-S3 — 15+ subsystems from BLE to an animated LVGL UI. Extended field battery life beyond 6 months (99% idle-power cut), built a sub-100 ms BLE protocol, OTA updates and a multi-layer watchdog on dual-core FreeRTOS.',
+    tags: ['ESP32-S3', 'BLE', 'FreeRTOS', 'LVGL', 'Power Mgmt', 'OTA'],
   },
   {
-    company: "Stratobotic",
-    role: { en: "On-Board Electronics Engineer", it: "Ingegnere Elettronico di Bordo" },
-    period: "Sep 2024 - Dec 2024",
-    type: { en: "Project-Based", it: "Basato su Progetto" },
-    description: {
-      en: "Designed UAV power distribution PCBs with MPPT circuits in KiCAD. Programmed GNSS tracking systems on Arduino.",
-      it: "Progettato PCB distribuzione potenza UAV con MPPT in KiCAD. Programmato tracking GNSS su Arduino.",
-    },
-    tags: ["KiCAD", "MPPT", "GNSS", "Arduino"],
-    color: "#ffbe0b",
+    org: 'Stratobotic', role: 'On-Board Electronics Engineer', period: 'Sep 2024 – Dec 2024',
+    body: 'Designed and optimized PCB schematics and layouts for UAV power distribution in KiCAD, with custom MPPT circuits for a solar-powered UAV and Arduino-based GNSS tracking with sub-meter accuracy. Received a strong recommendation for the work.',
+    tags: ['KiCAD', 'MPPT', 'GNSS', 'Power Optimization'],
   },
   {
-    company: "PoliTO Robotic Team",
-    role: { en: "Embedded Software Developer", it: "Sviluppatore Software Embedded" },
-    period: "Nov 2023 - Sep 2024",
-    type: { en: "Team Member", it: "Membro del Team" },
-    description: {
-      en: "Developed robotic functionalities with C and Python. Implemented FreeRTOS on STM32 with CAN/SPI/USART communication.",
-      it: "Funzionalit\u00e0 robotiche in C e Python. FreeRTOS su STM32 con comunicazione CAN/SPI/USART.",
-    },
-    tags: ["STM32", "FreeRTOS", "C", "CAN"],
-    color: "#39ff14",
+    org: 'Politecnico di Torino — Robotic Team', role: 'Embedded Software Developer', period: 'Nov 2023 – Sep 2024',
+    body: 'Developed robotic functionalities in C and Python under competition constraints — real-time operating systems on STM32 and robust CAN/SPI/USART communication between subsystems.',
+    tags: ['STM32', 'FreeRTOS', 'C', 'CAN', 'SPI'],
   },
 ];
 
+const EDU = [
+  { d: 'M.Sc. Computer Engineering — Embedded & Smart System Design', s: 'Polytechnic University of Turin', y: '2025 – 2027' },
+  { d: 'B.Sc. Electronics & Communication Engineering', s: 'Polytechnic University of Turin', y: '2022 – 2025' },
+];
+
 export default function Experience() {
-  const { lang, t } = useLang();
-
   return (
-    <section id="experience" className="portfolio-section">
-      <ScrollReveal>
-        <span className="tag">03 — Experience</span>
-      </ScrollReveal>
-
-      <ScrollReveal delay={0.1}>
-        <h2 className="section-title">{t('experience.title')}</h2>
-        <p className="section-sub">{t('experience.subtitle')}</p>
-      </ScrollReveal>
-
-      <div className="timeline">
-        {experiences.map((exp, i) => (
-          <ScrollReveal key={exp.company} delay={i * 0.15}>
-            <div className="timeline-item">
-              <div className="timeline-node" style={{ '--node-color': exp.color }}>
-                <span className="timeline-dot" />
-              </div>
-              <div className="glass-card timeline-card" style={{ '--card-accent': exp.color }}>
-                <div className="timeline-card-header">
-                  <div>
-                    <h3 className="timeline-company">{exp.company}</h3>
-                    <p className="timeline-role" style={{ color: exp.color }}>{exp.role[lang]}</p>
-                  </div>
-                  <div className="timeline-meta">
-                    <span>{exp.period}</span>
-                    <span>{exp.type[lang]}</span>
-                  </div>
-                </div>
-                <p className="timeline-desc">{exp.description[lang]}</p>
-                <div className="glass-card-tags">
-                  {exp.tags.map((tag) => (
-                    <span key={tag} className="glass-tag" style={{ color: exp.color, borderColor: exp.color + '30' }}>
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </ScrollReveal>
-        ))}
-      </div>
-
-      {/* Education */}
-      <ScrollReveal delay={0.4}>
-        <div className="glass-card education-card" style={{ '--card-accent': '#b537f2' }}>
-          <span className="tag" style={{ color: '#b537f2' }}>{t('experience.education')}</span>
-          <h3 className="education-degree">{t('experience.degree')}</h3>
-          <p className="education-uni">{t('experience.university')}</p>
-          <p className="education-period">{t('experience.period')}</p>
+    <section id="experience" className="sec">
+      <div className="wrap">
+        <div className="sec-head">
+          <ScrollReveal><span className="eyebrow">/ experience</span></ScrollReveal>
+          <ScrollReveal delay={0.05}><h2 className="sec-title">Where I've built.</h2></ScrollReveal>
         </div>
-      </ScrollReveal>
+        <div className="timeline">
+          {XP.map((x, i) => (
+            <ScrollReveal key={x.org} className="tl-item" delay={i * 0.05}>
+              <div className="tl-dot" />
+              <div className="tl-card">
+                <div className="tl-top"><h3>{x.org}</h3><span className="tl-period">{x.period}</span></div>
+                <div className="tl-role">{x.role}</div>
+                <p>{x.body}</p>
+                <div className="chips">{x.tags.map((t) => <span key={t} className="chip">{t}</span>)}</div>
+              </div>
+            </ScrollReveal>
+          ))}
+        </div>
+        <div className="edu">
+          {EDU.map((e) => (
+            <ScrollReveal key={e.d} className="edu-item">
+              <div className="edu-y">{e.y}</div>
+              <div><div className="edu-d">{e.d}</div><div className="edu-s">{e.s}</div></div>
+            </ScrollReveal>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }
