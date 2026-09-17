@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>JobMatch — Settings</title>
+  <link rel="stylesheet" href="popup.css" />
+  <style>
+    body { width: 640px; max-height: none; padding: 18px; }
+    h1 { font-size: 16px; margin: 0 0 14px; }
+    label { display: block; font-size: 12px; color: var(--fg-dim); margin: 12px 0 4px; }
+    input[type="text"], textarea {
+      width: 100%;
+      background: var(--bg-soft);
+      color: var(--fg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px;
+      font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace;
+    }
+    textarea { min-height: 280px; resize: vertical; }
+    textarea.short { min-height: 80px; }
+    .row { display: flex; gap: 10px; align-items: center; margin-top: 14px; }
+    #save-status { color: var(--good); font-size: 12px; }
+    .hint { color: var(--fg-dim); font-size: 11px; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <h1>JobMatch — Settings</h1>
+
+  <label for="helperUrl">Local helper URL</label>
+  <input id="helperUrl" type="text" placeholder="http://127.0.0.1:5577" />
+  <div class="hint">Where your local Python helper is listening. Default: <code>http://127.0.0.1:5577</code></div>
+
+  <label for="cvText">Your CV (Markdown or plain text)</label>
+  <textarea id="cvText" placeholder="Paste your CV here..."></textarea>
+  <div class="hint">Sent to the helper so Claude can score each job against your background. Stored locally in <code>chrome.storage.local</code>.</div>
+
+  <label for="careerFork">Your current career fork (used in every mentor message)</label>
+  <textarea id="careerFork" class="short" placeholder="Right now I am stuck between ___ and ___.&#10;In 3 years I want to be ___."></textarea>
+  <div class="hint">Two honest sentences. Every outreach draft turns this into the one specific question you ask. Without it, messages come out generic.</div>
+
+  <div class="row">
+    <button id="save-btn">Save</button>
+    <button id="load-cv-btn" class="secondary">Load CV from helper</button>
+    <span id="save-status"></span>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

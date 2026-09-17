@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>JobMatch</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <h1>JobMatch</h1>
+    <a id="settings-link" href="#">Settings</a>
+  </header>
+
+  <section id="status">
+    <div id="adapter-label">Site: <span id="adapter">—</span></div>
+    <div id="scan-row">
+      <button id="scan-btn">Scan this page</button>
+    </div>
+    <div id="mentor-row" hidden>
+      <label>Type:
+        <select id="mentor-type">
+          <option value="auto">auto-detect</option>
+          <option value="career">career</option>
+          <option value="technical">technical</option>
+          <option value="industry">industry</option>
+        </select>
+      </label>
+      <button id="draft-btn">Draft message</button>
+    </div>
+    <div id="progress" hidden></div>
+    <div id="error" class="error" hidden></div>
+    <div id="due" class="due" hidden></div>
+  </section>
+
+  <section id="outreach" hidden>
+    <div class="fit-head">
+      <span id="fit-score" class="score">?</span>
+      <div>
+        <div id="fit-name" class="job-title"></div>
+        <div id="fit-meta" class="job-meta"></div>
+      </div>
+    </div>
+    <div id="fit-reason" class="job-reason"></div>
+    <div id="why-you" class="job-tags"></div>
+
+    <div class="draft">
+      <div class="draft-head"><span>Connection note <em id="note-len"></em></span><button class="secondary copy-btn" data-src="note">Copy</button></div>
+      <textarea id="note" rows="3"></textarea>
+    </div>
+    <div class="draft">
+      <div class="draft-head"><span>LinkedIn message</span><button class="secondary copy-btn" data-src="dm">Copy</button></div>
+      <textarea id="dm" rows="7"></textarea>
+    </div>
+    <div class="draft">
+      <div class="draft-head"><span>Email</span>
+        <span>
+          <button class="secondary copy-btn" data-src="email">Copy</button>
+          <button class="secondary" id="gmail-btn">Open in Gmail</button>
+        </span>
+      </div>
+      <input id="email-subject" type="text" />
+      <textarea id="email" rows="8"></textarea>
+    </div>
+    <div class="draft">
+      <div class="draft-head"><span>Follow-up (5 weeks, no reply)</span><button class="secondary copy-btn" data-src="followup">Copy</button></div>
+      <textarea id="followup" rows="3"></textarea>
+    </div>
+
+    <div class="controls">
+      <label>Sent via:
+        <select id="sent-channel">
+          <option value="linkedin-note">connection note</option>
+          <option value="linkedin-dm">LinkedIn DM</option>
+          <option value="email">email</option>
+        </select>
+      </label>
+      <button id="mark-sent-btn">Mark as sent</button>
+      <span id="sent-status"></span>
+    </div>
+  </section>
+
+  <section id="results" hidden>
+    <div class="controls">
+      <label>Sort:
+        <select id="sort">
+          <option value="score">Match score</option>
+          <option value="title">Title</option>
+          <option value="company">Company</option>
+        </select>
+      </label>
+      <label>Min score:
+        <input id="min-score" type="number" min="0" max="100" value="0" />
+      </label>
+      <button id="export-btn" class="secondary">Export JSON</button>
+    </div>
+    <ul id="job-list"></ul>
+  </section>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>

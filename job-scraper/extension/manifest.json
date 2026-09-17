@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "JobMatch — CV-aware job scanner + mentor outreach",
+  "version": "0.2.0",
+  "description": "Scan job listings and rank them against your CV; on a LinkedIn profile, draft a personalised mentor-outreach message. All via a local helper.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": [
+    "https://careerdays.polito.it/*",
+    "https://*.linkedin.com/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "action": {
+    "default_title": "JobMatch — scan this page",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "options_page": "options.html"
+}
