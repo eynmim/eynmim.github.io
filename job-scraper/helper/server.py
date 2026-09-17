@@ -251,6 +251,7 @@ STEP 3 - Write the messages. Hard rules:
   - The ask is small and bounded: 20 minutes, ONE specific question that comes from the candidate's fork. Phrase the question itself in the message.
   - Type-specific ask: career -> ask about the transition they made; technical -> ask about one technical decision in their domain and offer to send one concrete design (portfolio link from the CV); industry -> ask for a coffee / office hour and what the local market currently hires for. Never ask for a referral or a job in a first message.
   - Plain, direct English. No exclamation marks. No emojis. Candidate is a non-native speaker; keep sentences short.
+  - Use ONLY facts that appear in the CV or in the recipient's profile. Never invent a project, number, company, event or conversation. If you need a fact you do not have, write a placeholder in square brackets for the candidate to fill, e.g. [what you did since].
 
 Outputs:
   connection_note   <= 280 characters INCLUDING spaces (LinkedIn connect-note limit is 300). One line. Name + one hook + "would value 20 min on <topic>".
@@ -262,7 +263,7 @@ Outputs:
                       line 5: "Would you have 20 minutes in the next few weeks? Happy to work around your schedule."
   email_subject     <= 60 chars, specific, no clickbait.
   email_body        <= 900 characters. Same five lines as message, then a sign-off: name, degree + university, city, portfolio link from the CV. No extra paragraphs.
-  follow_up         2-3 lines to send if there is no reply after 5 weeks. Adds ONE new piece of information (a small result, a new project) and re-asks once. No guilt.
+  follow_up         2-3 lines to send if there is no reply after 5 weeks. Line 2 must be exactly one sentence built around the literal placeholder [one concrete thing you did since - fill in] - do NOT invent what it is. Then re-ask once, same question. No guilt, no apology.
 
 Output STRICT JSON only, no markdown. Schema:
 {
@@ -276,6 +277,13 @@ Output STRICT JSON only, no markdown. Schema:
   "email_body": "<string>",
   "follow_up": "<string>"
 }"""
+
+
+# "Hi Marco,\nI hope this message finds you well. ..." -> group 1 keeps the greeting.
+FILLER_OPENER = re.compile(
+    r"^(\s*(?:hi|hello|dear)\b[^\n.!?]*?(?:,|\n)\s*)?I hope (?:this|you)[^.!?\n]*[.!?][ \t]*",
+    re.IGNORECASE,
+)
 
 
 def profile_to_prompt(profile: dict, fork: str, mentor_type: str) -> str:
@@ -346,6 +354,16 @@ def draft_outreach(cv_text: str, fork: str, profile: dict, mentor_type: str) -> 
             for k in ("mentor_type", "fit_reason", "why_you", "connection_note",
                       "message", "email_subject", "email_body", "follow_up"):
                 data.setdefault(k, "")
+            # The model occasionally re-classifies despite the FORCED line.
+            if mentor_type != "auto":
+                data["mentor_type"] = mentor_type
+            # ...and keeps opening the follow-up with this filler despite the ban.
+            # Only the opener is stripped (optionally after a greeting line);
+            # an "I hope you could ..." later in the body is left alone.
+            for k in ("message", "email_body", "follow_up"):
+                data[k] = FILLER_OPENER.sub(
+                    lambda m: m.group(1) or "", str(data.get(k) or ""), count=1
+                ).strip()
             return data
         except Exception as e:
             last_err = e

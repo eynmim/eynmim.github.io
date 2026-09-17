@@ -4,13 +4,25 @@
 // falls back to it when the structured fields come up empty.
 
 (function () {
-  const text = (el) => (el?.innerText || el?.textContent || "").replace(/\s+/g, " ").trim();
+  // LinkedIn renders most strings twice: <span aria-hidden="true">X</span>
+  // (the visible one) followed by <span class="visually-hidden">X</span> for
+  // screen readers. Drop only the screen-reader twin so text isn't doubled.
+  function text(el) {
+    if (!el) return "";
+    const clone = el.cloneNode(true);
+    clone.querySelectorAll(".visually-hidden").forEach((n) => n.remove());
+    return (clone.innerText || clone.textContent || "").replace(/\s+/g, " ").trim();
+  }
 
-  function sectionByHeading(re) {
-    // Profile sections are <section> blocks whose first heading names them.
+  function section(anchorId, headingRe) {
+    // Preferred: each profile card carries an empty anchor <div id="experience">.
+    const anchor = document.getElementById(anchorId);
+    const byAnchor = anchor?.closest("section");
+    if (byAnchor) return byAnchor;
+    // Fallback: first section whose heading text matches.
     for (const sec of document.querySelectorAll("main section")) {
-      const h = sec.querySelector("h2, h3, div[id] > span");
-      if (h && re.test(text(h))) return sec;
+      const h = sec.querySelector("h2, h3");
+      if (h && headingRe.test(text(h))) return sec;
     }
     return null;
   }
@@ -19,12 +31,9 @@
     if (!sec) return [];
     const out = [];
     for (const li of sec.querySelectorAll("li")) {
-      // Skip nested sub-items; keep top-level entries only.
+      // Skip nested sub-items (multiple roles at one company); keep top-level entries.
       if (li.parentElement?.closest("li")) continue;
-      // LinkedIn duplicates every string in an aria-hidden twin; drop the twins.
-      const clone = li.cloneNode(true);
-      clone.querySelectorAll('[aria-hidden="true"]').forEach((n) => n.remove());
-      const t = text(clone).slice(0, 300);
+      const t = text(li).slice(0, 300);
       if (t) out.push(t);
       if (out.length >= max) break;
     }
@@ -40,13 +49,13 @@
     const location = text(
       main.querySelector(".text-body-small.inline.t-black--light.break-words, span.text-body-small.inline")
     );
-    const aboutSec = sectionByHeading(/^about$/i);
+    const aboutSec = section("about", /^about$/i);
     const about = aboutSec ? text(aboutSec).replace(/^About\s*/i, "").slice(0, 1500) : "";
-    const experience = listItems(sectionByHeading(/^experience$/i), 10);
-    const education = listItems(sectionByHeading(/^education$/i), 5);
+    const experience = listItems(section("experience", /^experience$/i), 10);
+    const education = listItems(section("education", /^education$/i), 5);
 
     const rawClone = main.cloneNode(true);
-    rawClone.querySelectorAll('script, style, noscript, [aria-hidden="true"]').forEach((n) => n.remove());
+    rawClone.querySelectorAll("script, style, noscript, .visually-hidden").forEach((n) => n.remove());
     const raw = (rawClone.innerText || "").replace(/\n{3,}/g, "\n\n").trim().slice(0, 8000);
 
     const profile = {
