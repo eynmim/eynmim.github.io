@@ -19,7 +19,9 @@ The same extension has a second mode, **MentorMatch**: on a LinkedIn profile pag
 
 ## MentorMatch — mentor outreach
 
-Purpose: cover more people in less time *without* automating LinkedIn itself (auto-sending gets accounts restricted). The tool does research + drafting + tracking; you press Send.
+Purpose: contact more potential mentors in less time *without* automating LinkedIn
+itself (auto-sending gets accounts restricted). The tool does research + drafting +
+tracking; **you** read every message and press Send.
 
 ```
 linkedin.com/in/<slug>         popup                          helper
@@ -35,70 +37,152 @@ linkedin.com/in/<slug>         popup                          helper
                                         └──────────────────────────────┘
 ```
 
-### Setup (once)
+### A. Fresh machine — do this once
 
-1. Extension → **Options** → fill **Your current career fork** — two honest sentences
-   ("Right now I am stuck between ___ and ___. In 3 years I want to be ___."). Every
-   draft turns this into the one specific question you ask. Skip it and messages come
-   out generic.
-2. Optional, in `helper/.env`: `OUTREACH_MODEL=gemini-2.5-flash` (default) — do **not**
-   use `flash-lite` here, it drops the "one numeric achievement" rule.
-   `FOLLOWUP_DAYS=35` sets when a contact shows up as due.
+Needs Python 3.10+ and Chrome (or Edge). Node is **not** needed.
 
-### First real test on a fresh machine (checklist)
-
-```
-[ ] git clone https://github.com/eynmim/eynmim.github.io.git  (or git pull)
-[ ] cd job-scraper/helper && python -m venv .venv && .\.venv\Scripts\Activate.ps1
-[ ] pip install -r requirements.txt
-[ ] copy .env.example .env  -> paste GOOGLE_API_KEY (aistudio.google.com/apikey)
-[ ] python server.py        -> http://127.0.0.1:5577/health shows has_api_key: true
-[ ] chrome://extensions -> Developer mode -> Load unpacked -> job-scraper/extension
-[ ] icon -> Options -> Load CV from helper -> fill "career fork" -> Save
-[ ] open a real linkedin.com/in/<name> page, scroll once
-[ ] icon -> Draft message
-      name + headline filled?   if blank -> DevTools console, look for
-                                [JobMatch:linkedin-profile] ... raw N chars
-                                (raw > 0 means the model still has the text)
-      fit score + reason sane?
-      DM has ONE number from the CV, ONE fact from their profile, ONE question?
-[ ] Copy -> paste in LinkedIn -> send yourself (never automated)
-[ ] Mark as sent -> helper/outreach.csv has one row with followup_due = +35 days
-[ ] reopen popup on another profile: no "due" banner yet (correct, it's day 0)
+```powershell
+git clone https://github.com/eynmim/eynmim.github.io.git      # or: git pull
+cd eynmim.github.io\job-scraper\helper
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+copy .env.example .env
+notepad .env
 ```
 
-If the DOM selectors miss (blank name/headline), note which and fix
-`extension/adapters/linkedin-profile.js`; the raw-text fallback keeps drafts
-working meanwhile.
+Put these two lines in `.env` (free key from <https://aistudio.google.com/apikey>,
+your own Google account, no card):
 
-### Per person (~1 minute)
+```
+GOOGLE_API_KEY=AIza...
+MODEL=gemini-2.5-flash-lite
+```
 
-1. Open the person's profile (`linkedin.com/in/...`), scroll once so it loads.
-2. Click the extension → pick a type or leave **auto-detect** → **Draft message**.
-3. Read the **fit score** first. Below ~40 the reason will say why to skip — skip.
-4. Edit the text if you want, then **Copy** the note (not yet connected) or the DM
-   (already connected), paste into LinkedIn, send. For professors / alumni with a
-   known address, **Open in Gmail** opens a prefilled compose window.
-5. **Mark as sent** → appends a row to `helper/outreach.csv` with a follow-up date.
+Leave `OUTREACH_MODEL` unset (default `gemini-2.5-flash`). `flash-lite` drops the
+"one numeric achievement" rule — tested.
 
-When you reopen the popup on any profile, contacts whose follow-up date has passed are
-listed at the top. The **Follow-up** box gives you the text. After they reply, edit the
-`status` column in the CSV by hand (`replied` / `done` / `dead`) to drop them from the list.
+```powershell
+python server.py
+```
 
-### The three mentor types the drafts target
+Expect `outreach_model=gemini-2.5-flash ... followup_days=35` in the console and
+`"has_api_key": true, "cv_exists": true` at <http://127.0.0.1:5577/health>.
+**Keep this window open** whenever you use the extension.
 
-| type | who | what the message asks |
+Extension:
+
+1. `chrome://extensions` → **Developer mode** on → **Load unpacked** →
+   `eynmim.github.io\job-scraper\extension` → pin the JobMatch icon.
+2. Right-click icon → **Options**:
+   - **Load CV from helper**
+   - **Your current career fork** — two honest sentences, in English:
+     `Right now I am stuck between ___ and ___.` `In 3 years I want to be ___.`
+     Every draft turns this into the one question you ask. Without it the
+     messages come out generic. This is the most important field.
+   - **Save**
+
+After every `git pull` that touches `extension/`: `chrome://extensions` → ⟳ Reload.
+
+### B. Per person (~1 minute)
+
+```
+① open linkedin.com/in/<person>  → scroll down once so Experience loads
+② JobMatch icon → Type: auto-detect → [Draft message]        (5–15 s)
+③ read the fit score FIRST
+      70+     go ahead
+      40–70   read the reason, your call
+      < 40    skip, next person (the reason says why)
+④ Copy ONE of:
+      Connection note  → not connected yet   (LinkedIn: Connect → Add a note → paste)
+      LinkedIn message → already connected   (Message → paste)
+      Email            → [Open in Gmail] → type the address → Send   (professors, alumni)
+   READ IT before sending. Edit in the box if anything is off.
+⑤ sent? → "Sent via:" = the channel you used → [Mark as sent]
+      → "Logged. Follow up on 2026-xx-xx."
+```
+
+### C. Follow-ups
+
+Whenever you open the popup on any profile, overdue contacts are listed at the top
+("N follow-ups due: …"). For each one: open their profile → Draft → copy the
+**Follow-up** box → replace `[one concrete thing you did since - fill in]` with
+something **true** (a result, a finished project) → send.
+
+When someone replies: open `helper/outreach.csv` (Excel/Notepad), change that row's
+`status` from `sent` to `replied` / `done` / `dead`. It leaves the due list.
+
+### D. Rules — you, not the tool
+
+| do | don't |
+|---|---|
+| Max **5–8 messages per day**. LinkedIn flags bulk notes to strangers; quality beats volume anyway. | Never automate sending. Never paste in a loop. |
+| Read every draft before Send. The tool drafts; you are responsible for what goes out. | Never send a follow-up with the `[fill in]` placeholder still in it. |
+| Week 1: five people across the three types (2 career, 2 technical, 1 industry — e.g. your ex-manager at Stratobotic). See which type answers. | Don't ask for a referral or a job in a first message. The prompt won't; don't add it by hand. |
+| Fill the follow-up placeholder with something real. | Don't invent achievements when editing. Everything in the drafts is from the CV on purpose. |
+| Target people **5–8 years ahead** of you — they remember your fork and have time. | Skip people 20 years ahead, same seniority as you, or unrelated field (fit score will say so). |
+
+### E. What the output looks like
+
+Real run against a test profile ("Marco", PCB at ST → firmware → Staff FW at Nordic,
+PoliTo alumnus). Fit 95, type `career`. Nothing here is edited.
+
+**Connection note** (117/300)
+> Hi Marco, fellow PoliTo alumnus. Your move from PCB to firmware interests me. Would value 20 min on career direction.
+
+**LinkedIn message**
+> Hi Marco,
+> I am Ali Mansouri, a Politecnico di Torino alumnus who led the firmware architecture of an IoT camera that achieved over 6 months of battery life.
+> I saw you moved from Hardware Engineer (PCB) to Senior Firmware Engineer at STMicroelectronics.
+> I am currently deciding whether to deepen PCB design or focus on firmware architecture. What was the biggest challenge in your transition from hardware to firmware?
+> Would you have 20 minutes in the next few weeks? Happy to work around your schedule.
+
+**Email** — subject `PoliTo alumnus: PCB to firmware career path`, same five lines, then:
+> Ali Mansouri
+> MSc Computer Engineering, Politecnico di Torino
+> Turin, Italy
+> eynmim.github.io
+
+**Follow-up** (5 weeks, no reply)
+> Hi Marco,
+> Just following up on my message. I have since [one concrete thing you did since - fill in].
+> I am still keen to hear what was the biggest challenge in your transition from hardware to firmware. Would you have 20 minutes?
+
+Shape of every DM: greeting · who I am + ONE number from the CV · ONE fact from *their*
+profile · ONE question derived from your fork · a 20-minute bounded ask. Never the word
+"mentor", never "passionate", never a referral request.
+
+### F. Who to look for (LinkedIn search)
+
+| type | search | good sign |
 |---|---|---|
-| `career` | senior/staff/lead with a visible transition | how they made *that* transition |
-| `technical` | hands-on expert in your stack, OSS maintainer, FAE | one technical decision + offers to send a design |
-| `industry` | professor, alumni, ex-manager, local founder | coffee / office hour, what the market hires for |
+| `career` | `"Staff Firmware" OR "Principal Embedded" OR "Embedded Lead"`, Europe | a visible *transition* in Experience: HW→FW, IC→lead, big co→startup, moved country |
+| `technical` | `Espressif`, `Nordic Semiconductor`, `Zephyr`, `"Field Application Engineer" BLE` | GitHub linked, posts technical content, maintains something |
+| `industry` | School: Politecnico di Torino + Company: STMicroelectronics / Leonardo / Comau / Reply | alumni who graduated 2015–2020 and are now senior |
 
-Rules baked into the prompt: one numeric achievement from the CV, one specific anchor from
-*their* profile, one question, a 20-minute bounded ask, never the word "mentor", never a
-referral request in the first message. The prompt lives in
-`helper/server.py → OUTREACH_INSTRUCTIONS`.
+### G. Troubleshooting
 
-`outreach.csv` contains real people's names — it is gitignored on purpose.
+| symptom | cause / fix |
+|---|---|
+| "Helper unreachable" | `python server.py` not running, or `.venv` not activated |
+| "Could not read a profile from this page" | not on a `/in/` URL, or page not loaded — scroll, retry |
+| name/headline blank but a draft came | LinkedIn changed its DOM. F12 → Console → send the line `[JobMatch:linkedin-profile] … raw N chars`. Drafts still work from raw text meanwhile; fix selectors in `extension/adapters/linkedin-profile.js`. |
+| "GOOGLE_API_KEY not configured" | check `.env`, restart helper |
+| slow draft / 429 in helper console | Gemini free tier; helper retries with backoff, wait a few seconds |
+| draft text looks generic | the **career fork** field in Options is empty |
+| extension behaves oddly after `git pull` | `chrome://extensions` → ⟳ Reload |
+
+### H. Internals
+
+Prompt: `helper/server.py → OUTREACH_INSTRUCTIONS`. Post-processing in `draft_outreach()`
+enforces the forced type, strips "I hope this finds you well" openers, and retries once
+if the DM has no number. Tracker: `helper/outreach.csv` (columns `sent_at, name, url,
+company, mentor_type, channel, followup_due, status, notes`) — **gitignored, real names**.
+CORS is limited to `chrome-extension://` origins because `/cv` and `/outreach/due` expose
+personal data. Env: `OUTREACH_MODEL`, `FOLLOWUP_DAYS`, `OUTREACH_CSV`.
+
+Tested end-to-end (real extension in Chromium + fake `www.linkedin.com` over HTTPS +
+real helper, 36 checks). Not tested: LinkedIn's live DOM (see G), clipboard in headless.
 
 ---
 
