@@ -219,8 +219,14 @@ and asks the model once more; the fill-in placeholder must survive untouched.
 
 ### F. Who to look for
 
-See the area table in §D2. For a dilemma fork, aim 5-8 years ahead of you: they remember
-your question and still have time. Skip people 20 years ahead or at your own seniority.
+Don't search by title alone. A small-company "Electronics Engineer" often does the
+board, the firmware and the EMC test, and is exactly who you want. **[TITLES.md](TITLES.md)**
+has, per area, the English and Italian titles, the tool/part keywords that find people by
+what they *do*, and copy-paste LinkedIn Boolean strings. The fit score judges by
+experience, not title.
+
+The flow is: the tool drafts the **first** message only. Replies are a conversation, and
+that's yours by hand. The follow-up box is only for people who never answered.
 
 ### G. Troubleshooting
 

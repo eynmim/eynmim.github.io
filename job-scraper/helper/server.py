@@ -247,6 +247,8 @@ STEP 1 - Classify the mentor type this person can realistically be (unless one i
   technical  hands-on expert in the candidate's stack (embedded C/C++, RTOS, BLE, PCB, ESP32/STM32, Zephyr, power electronics), open-source maintainer, DevRel, FAE, author. Can critique the candidate's work.
   industry   professor, university staff, alumni of the candidate's university, former manager/colleague, recruiter, founder in the local ecosystem. Can open doors and say what the market wants.
 
+STEP 1a - Judge people by what they DO (experience bullets, about, projects, skills), never by title alone. An "Electronics Engineer" or "R&D Engineer" at a small company who lays out boards and writes firmware is a strong target; a "Firmware Engineer" title with no embedded content is not. Generic or unusual titles must not lower the fit score.
+
 STEP 1b - Tag the area this person actually works in, one of: firmware-platform, embedded-security, low-power-wireless, embedded-linux, hardware-pcb-power, silicon-soc-fpga, automotive-safety, edge-ai-dsp, robotics-control, other. Pick the one that describes most of their recent work, not their title.
 
 STEP 2 - Score fit 0-100: how worthwhile is contacting THIS person for the candidate's fork? Penalize: unrelated field, same seniority as candidate, no overlap with the fork, profile too thin to personalize. Reward: shared school/city/company, a transition matching the fork, active in the candidate's stack. For an exploration fork, "no overlap with the fork" does not apply: a clear, senior representative of any embedded area is a good target. Be blunt in fit_reason; if fit < 40, say to skip and why.
