@@ -574,6 +574,33 @@ def outreach_due():
     return jsonify(due=due, total=len(rows), path=str(OUTREACH_CSV))
 
 
+# Two conversations per area is the exploration target in README D2. The popup's
+# search launcher shows this so you can see which areas are still untouched.
+AREA_TARGET = int(os.environ.get("AREA_TARGET", "2"))
+
+
+@app.get("/outreach/coverage")
+def outreach_coverage():
+    rows = outreach_rows()
+    by_area = {a: {"contacted": 0, "replied": 0} for a in AREAS}
+    for r in rows:
+        a = (r.get("area") or "other").strip() or "other"
+        if a not in by_area:
+            a = "other"
+        by_area[a]["contacted"] += 1
+        if (r.get("status") or "").strip() in ("replied", "done"):
+            by_area[a]["replied"] += 1
+    today = date.today().isoformat()
+    sent_today = sum(1 for r in rows if (r.get("sent_at") or "").startswith(today))
+    return jsonify(
+        by_area=by_area,
+        target=AREA_TARGET,
+        total=len(rows),
+        sent_today=sent_today,
+        path=str(OUTREACH_CSV),
+    )
+
+
 if __name__ == "__main__":
     print(f"[i] JobMatch helper starting on http://127.0.0.1:{PORT}")
     print(f"[i] provider=google-gemini  model={MODEL}")

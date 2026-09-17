@@ -1,0 +1,108 @@
+// Runs extension/search.html + search.js in jsdom against a stubbed chrome.* and
+// fetch. No network, no browser, no LinkedIn.
+
+const fs = require("fs");
+const path = require("path");
+const { JSDOM } = require("jsdom");
+
+const EXT = path.join(__dirname, "..", "extension");
+let pass = 0, fail = 0;
+const ok = (c, m) => { if (c) { pass++; console.log("  ok   " + m); } else { fail++; console.log("  FAIL " + m); } };
+const tick = () => new Promise((r) => setTimeout(r, 0));
+
+// Mirrors AREAS in helper/server.py. If these drift apart the coverage badges
+// silently stop matching the tracker, so assert on it.
+const SERVER_AREAS = [
+  "firmware-platform", "embedded-security", "low-power-wireless", "embedded-linux",
+  "hardware-pcb-power", "silicon-soc-fpga", "automotive-safety", "edge-ai-dsp",
+  "robotics-control", "other",
+];
+
+(async () => {
+  const dom = new JSDOM(fs.readFileSync(path.join(EXT, "search.html"), "utf8"), { runScripts: "outside-only" });
+  const { window } = dom;
+  const opened = [];
+  const copied = [];
+
+  window.chrome = {
+    storage: { local: { get: async () => ({ helperUrl: "http://127.0.0.1:5577" }) } },
+    tabs: { create: (o) => opened.push(o.url) },
+  };
+  // Two contacted in firmware-platform (target met), one in embedded-linux,
+  // every other area absent from the response on purpose.
+  window.fetch = async () => ({
+    ok: true,
+    json: async () => ({
+      by_area: {
+        "firmware-platform": { contacted: 2, replied: 1 },
+        "embedded-linux": { contacted: 1, replied: 0 },
+      },
+      target: 2, total: 3, sent_today: 3,
+    }),
+  });
+  Object.defineProperty(window.navigator, "clipboard", {
+    value: { writeText: async (t) => copied.push(t) }, configurable: true,
+  });
+
+  window.eval(fs.readFileSync(path.join(EXT, "search.js"), "utf8"));
+  window.document.dispatchEvent(new window.Event("DOMContentLoaded"));
+  await tick(); await tick();
+
+  const doc = window.document;
+  const cards = () => [...doc.querySelectorAll(".area")];
+  const card = (id) => cards().find((c) => c.querySelector(".tag").textContent === id);
+
+  console.log("search page");
+  ok(cards().length === SERVER_AREAS.length, `renders every area (${cards().length})`);
+  const tags = cards().map((c) => c.querySelector(".tag").textContent);
+  ok(SERVER_AREAS.every((a) => tags.includes(a)), "area tags match the helper's AREAS tuple");
+
+  ok(card("firmware-platform").querySelector(".cov").textContent === "2/2", "target met shows 2/2");
+  ok(card("firmware-platform").querySelector(".cov").className.includes("done"), "  marked done");
+  ok(card("embedded-linux").querySelector(".cov").textContent === "1/2", "partial shows 1/2");
+  ok(card("embedded-linux").querySelector(".cov").className.includes("part"), "  marked partial");
+  // An area missing from the response means nobody contacted yet, NOT a dead helper.
+  ok(card("silicon-soc-fpga").querySelector(".cov").textContent === "0/2", "area absent from the response reads 0/2");
+
+  const quota = doc.getElementById("quota");
+  ok(quota.textContent.includes("3 / 8"), `daily counter shows today's sends (${quota.textContent})`);
+  ok(quota.className.includes("ok"), "  3 of 8 still green");
+
+  card("firmware-platform").querySelectorAll("button")[0].dispatchEvent(new window.Event("click"));
+  ok(opened.length === 1, "a search button opens one tab");
+  const u = new window.URL(opened[0]);
+  ok(u.hostname === "www.linkedin.com" && u.pathname === "/search/results/people/", "  LinkedIn people search");
+  ok(u.searchParams.get("keywords").includes('"firmware engineer"'), "  carries the TITLES.md string");
+  ok(!u.searchParams.get("keywords").includes("Politecnico"), "  no school term while the toggle is off");
+
+  const toggle = (id, on) => {
+    doc.getElementById(id).checked = on;
+    doc.getElementById(id).dispatchEvent(new window.Event("change"));
+  };
+  toggle("polito", true);
+  await tick();
+  card("firmware-platform").querySelectorAll("button")[0].dispatchEvent(new window.Event("click"));
+  ok(new window.URL(opened[1]).searchParams.get("keywords").includes('"Politecnico di Torino"'),
+     "PoliTo toggle adds the school to the query");
+
+  const warnCount = () => [...doc.querySelectorAll(".area button")].filter((b) => b.textContent.includes("terms")).length;
+  toggle("polito", false);
+  await tick();
+  ok(warnCount() === 0, "curated strings alone stay under the ~15 term limit");
+  toggle("polito", true); toggle("senior", true);
+  await tick();
+  ok(warnCount() > 0, `both toggles push the long strings over and warn (${warnCount()} buttons)`);
+  toggle("polito", false); toggle("senior", false);
+  await tick();
+
+  const postsBtn = [...doc.querySelectorAll("#graph button")].find((b) => b.textContent.includes("post"));
+  postsBtn.dispatchEvent(new window.Event("click"));
+  ok(opened[opened.length - 1].includes("/search/results/content/"), "the posts row searches posts, not people");
+
+  card("firmware-platform").querySelector("button.secondary").dispatchEvent(new window.Event("click"));
+  await tick();
+  ok(copied.length === 1 && copied[0].includes("firmware engineer"), "Copy query reaches the clipboard");
+
+  console.log(`\n${pass} passed, ${fail} failed`);
+  process.exit(fail ? 1 : 0);
+})();

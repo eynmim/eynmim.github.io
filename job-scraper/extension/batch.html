@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>JobMatch — Batch drafts</title>
+  <style>
+    :root {
+      --bg: #0f1419; --bg-soft: #1a2028; --fg: #e6e9ef; --fg-dim: #9aa3ad;
+      --accent: #7aa2f7; --good: #9ece6a; --warn: #e0af68; --bad: #f7768e; --border: #2a313c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 24px; max-width: 900px;
+      font: 13px/1.5 system-ui, -apple-system, Segoe UI, sans-serif;
+      background: var(--bg); color: var(--fg);
+    }
+    h1 { font-size: 18px; margin: 0 0 4px; }
+    h2 { font-size: 14px; margin: 26px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+    .sub { color: var(--fg-dim); margin-bottom: 18px; }
+    .bar {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 10px 12px; background: var(--bg-soft); border: 1px solid var(--border);
+      border-radius: 8px; margin-bottom: 14px;
+    }
+    .bar label { color: var(--fg-dim); display: flex; align-items: center; gap: 6px; }
+    .bar select {
+      background: var(--bg); color: var(--fg); border: 1px solid var(--border);
+      border-radius: 4px; padding: 3px 6px; font-size: 12px;
+    }
+    .quota { margin-left: auto; font-weight: 600; }
+    .quota.ok { color: var(--good); }
+    .quota.near { color: var(--warn); }
+    .quota.over { color: var(--bad); }
+    button {
+      background: var(--accent); color: #0f1419; border: 0; padding: 6px 12px;
+      border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px;
+    }
+    button:hover { filter: brightness(1.1); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.secondary { background: transparent; color: var(--fg-dim); border: 1px solid var(--border); font-weight: 400; }
+    ul#tabs { list-style: none; margin: 0 0 14px; padding: 0; }
+    ul#tabs li {
+      display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+      border: 1px solid var(--border); border-radius: 6px; background: var(--bg-soft); margin-bottom: 6px;
+    }
+    ul#tabs .t-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    ul#tabs .t-url { color: var(--fg-dim); font-size: 11px; }
+    .empty { color: var(--fg-dim); padding: 12px 0; }
+    .card {
+      border: 1px solid var(--border); border-radius: 8px; background: var(--bg-soft);
+      padding: 12px 14px; margin-bottom: 12px;
+    }
+    .card.failed { border-color: rgba(247, 118, 142, 0.4); }
+    .fit-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .score { font-weight: 700; padding: 2px 8px; border-radius: 10px; font-size: 12px; min-width: 38px; text-align: center; }
+    .score.s-high { background: var(--good); color: #0f1419; }
+    .score.s-mid  { background: var(--warn); color: #0f1419; }
+    .score.s-low  { background: var(--bad);  color: #0f1419; }
+    .name { font-weight: 600; flex: 1; }
+    .name a { color: var(--fg); text-decoration: none; }
+    .name a:hover { color: var(--accent); }
+    .meta { color: var(--fg-dim); font-size: 11px; }
+    .reason { font-size: 12px; margin: 4px 0 2px; }
+    .anchor { color: var(--fg-dim); font-size: 11px; margin-bottom: 6px; }
+    .draft { margin-top: 10px; }
+    .draft-head { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--fg-dim); margin-bottom: 4px; }
+    .draft-head em { font-style: normal; margin-left: 6px; }
+    .draft-head em.over { color: var(--bad); }
+    .draft textarea, .draft input[type="text"] {
+      width: 100%; background: var(--bg); color: var(--fg); border: 1px solid var(--border);
+      border-radius: 6px; padding: 8px; font: 12px/1.45 system-ui, -apple-system, Segoe UI, sans-serif; resize: vertical;
+    }
+    .draft input[type="text"] { margin-bottom: 4px; }
+    .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: var(--fg-dim); }
+    .controls select { background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; padding: 3px 6px; font-size: 12px; }
+    .sent-status { color: var(--good); }
+    .err { color: var(--bad); font-size: 12px; }
+    .banner {
+      padding: 10px 12px; border-radius: 6px; font-size: 12px; margin-bottom: 14px;
+      background: rgba(224, 175, 104, 0.1); color: var(--warn); border: 1px solid rgba(224, 175, 104, 0.3);
+    }
+    .banner.bad { background: rgba(247, 118, 142, 0.1); color: var(--bad); border-color: rgba(247, 118, 142, 0.3); }
+    #progress { color: var(--fg-dim); font-size: 12px; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Batch drafts</h1>
+  <div class="sub">
+    Open the profiles you want in normal tabs, scroll each one once so Experience loads, then
+    draft them all here in one go. <b>Nothing is sent.</b> You still read every draft and paste
+    it into LinkedIn yourself.
+  </div>
+
+  <div id="banner" class="banner" hidden></div>
+
+  <div class="bar">
+    <button id="refresh-btn" class="secondary">Refresh tab list</button>
+    <label>Type:
+      <select id="mentor-type">
+        <option value="auto">auto-detect</option>
+        <option value="career">career</option>
+        <option value="technical">technical</option>
+        <option value="industry">industry</option>
+      </select>
+    </label>
+    <button id="draft-btn">Draft selected</button>
+    <span id="quota" class="quota">—</span>
+  </div>
+
+  <ul id="tabs"></ul>
+  <div id="progress"></div>
+
+  <h2>Drafts</h2>
+  <div id="results"><div class="empty">Nothing drafted yet.</div></div>
+
+  <script src="batch.js"></script>
+</body>
+</html>

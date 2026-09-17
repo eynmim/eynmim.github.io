@@ -102,6 +102,30 @@ After every `git pull` that touches `extension/`: `chrome://extensions` → ⟳ 
       → "Logged. Follow up on 2026-xx-xx."
 ```
 
+### B2. Doing several in one sitting
+
+Two pages hang off the popup header, **Search** and **Batch**. Both exist to cut the time
+you spend, not to remove you from the loop: nothing is scraped in the background and
+nothing is ever sent.
+
+**Search** turns [TITLES.md](TITLES.md) into buttons. Per area it shows who to look for,
+the area-specific question from §D2, how many people you have already contacted out of the
+two you are aiming for, and one click per Boolean string (by title, by tools). Two toggles
+add `"Politecnico di Torino"` or a seniority filter to every search, and a button warns
+when the string passes ~15 terms because LinkedIn silently truncates past that. The counter
+in the corner is today's messages against the daily cap in §D.
+
+**Batch** takes the `linkedin.com/in/` tabs you already have open and drafts them one after
+another, so the model's 5-15 seconds stop being your waiting time. Middle-click a handful
+of search results, scroll each tab once so Experience loads, then open Batch, untick anyone
+you don't want, and hit Draft selected. Each result comes back as the same card the popup
+shows: fit score first, then the four drafts, then Mark as sent. Read every one before it
+goes anywhere. If the Gemini quota runs out mid-run the batch stops there and says so; the
+drafts already on screen stay usable.
+
+Drafting ten and sending five is fine. Sending ten is not, and the page says so when you
+select more than eight.
+
 ### C. Follow-ups
 
 Whenever you open the popup on any profile, overdue contacts are listed at the top
@@ -223,7 +247,8 @@ Don't search by title alone. A small-company "Electronics Engineer" often does t
 board, the firmware and the EMC test, and is exactly who you want. **[TITLES.md](TITLES.md)**
 has, per area, the English and Italian titles, the tool/part keywords that find people by
 what they *do*, and copy-paste LinkedIn Boolean strings. The fit score judges by
-experience, not title.
+experience, not title. The **Search** page (§B2) is that file as buttons, with
+your coverage per area next to each one.
 
 The flow is: the tool drafts the **first** message only. Replies are a conversation, and
 that's yours by hand. The follow-up box is only for people who never answered.
@@ -248,11 +273,22 @@ Prompt: `helper/server.py → OUTREACH_INSTRUCTIONS` (content rules + voice rule
 missing follow-up placeholder → one retry with the problems listed. `draft_outreach()` also
 enforces the forced type and strips a "hope this finds you well" opener. Tracker: `helper/outreach.csv` (columns `sent_at, name, url,
 company, mentor_type, area, channel, followup_due, status, notes`) — **gitignored, real names**.
-CORS is limited to `chrome-extension://` origins because `/cv` and `/outreach/due` expose
-personal data. Env: `OUTREACH_MODEL`, `FOLLOWUP_DAYS`, `OUTREACH_CSV`.
+CORS is limited to `chrome-extension://` origins because `/cv`, `/outreach/due` and
+`/outreach/coverage` expose personal data. Env: `OUTREACH_MODEL`, `FOLLOWUP_DAYS`,
+`OUTREACH_CSV`, `AREA_TARGET`.
+
+`GET /outreach/coverage` counts the tracker by area (`contacted`, `replied`) plus
+`sent_today`, and is what the Search and Batch pages show. It reads the same CSV; no new
+state. The search strings live in `extension/search.js` as data copied from TITLES.md —
+when you edit one, edit both. Batch reuses `background.js → draftOutreach` per tab with a
+1.5 s gap and stops the run on a 429.
 
 Tested end-to-end (real extension in Chromium + fake `www.linkedin.com` over HTTPS +
-real helper, 36 checks). Not tested: LinkedIn's live DOM (see G), clipboard in headless.
+real helper, 36 checks). [test/](test/) holds the headless checks that run anywhere:
+`npm test` drives the Search and Batch pages in jsdom against stubbed `chrome.*`, and
+`helper_test.py` covers the lint and the tracker endpoints against a temp CSV. Neither
+touches LinkedIn, the real tracker, or Gemini. Not tested: LinkedIn's live DOM (see G),
+clipboard in headless.
 
 ---
 
@@ -358,12 +394,17 @@ job-scraper/
 │   ├── manifest.json
 │   ├── popup.html / popup.js / popup.css
 │   ├── options.html / options.js
+│   ├── search.html / search.js    # TITLES.md as one-click searches + coverage
+│   ├── batch.html / batch.js      # draft every open profile tab, still hand-sent
 │   ├── background.js              # service worker
 │   └── adapters/
 │       ├── careerdays.js
 │       ├── linkedin.js            # stub (jobs)
 │       ├── linkedin-profile.js    # MentorMatch: one person
 │       └── generic.js             # fallback
+├── test/                          # headless checks, no browser and no API calls
+│   ├── search.test.js / batch.test.js
+│   └── helper_test.py
 └── helper/
     ├── server.py                  # Flask + Claude
     ├── requirements.txt

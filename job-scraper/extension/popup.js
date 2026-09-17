@@ -16,6 +16,8 @@ const els = {
   minScore: document.getElementById("min-score"),
   exportBtn: document.getElementById("export-btn"),
   settingsLink: document.getElementById("settings-link"),
+  searchLink: document.getElementById("search-link"),
+  batchLink: document.getElementById("batch-link"),
   // MentorMatch
   scanRow: document.getElementById("scan-row"),
   mentorRow: document.getElementById("mentor-row"),
@@ -47,6 +49,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   els.settingsLink.addEventListener("click", (e) => {
     e.preventDefault();
     chrome.runtime.openOptionsPage();
+  });
+  els.searchLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    chrome.tabs.create({ url: chrome.runtime.getURL("search.html") });
+  });
+  els.batchLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    chrome.tabs.create({ url: chrome.runtime.getURL("batch.html") });
   });
   els.scanBtn.addEventListener("click", onScan);
   els.sort.addEventListener("change", render);
