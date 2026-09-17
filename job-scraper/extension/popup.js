@@ -281,7 +281,7 @@ function renderOutreach() {
   els.fitScore.textContent = draft.fit_score ?? "?";
   els.fitScore.className = `score ${scoreClass(draft.fit_score ?? 0)}`;
   els.fitName.textContent = profile.name || "(no name)";
-  els.fitMeta.textContent = [draft.mentor_type, profile.headline].filter(Boolean).join(" • ");
+  els.fitMeta.textContent = [draft.mentor_type, draft.area, profile.headline].filter(Boolean).join(" • ");
   els.fitReason.textContent = draft.fit_reason || "";
   els.whyYou.textContent = draft.why_you ? `Anchor: ${draft.why_you}` : "";
   els.note.value = draft.connection_note || "";
@@ -342,6 +342,7 @@ async function onMarkSent() {
         url: profile.url,
         company: profile.headline,
         mentor_type: draft.mentor_type,
+        area: draft.area,
         channel: els.sentChannel.value,
         notes: draft.why_you,
       }),

@@ -74,9 +74,14 @@ OUTREACH_MODEL = os.environ.get("OUTREACH_MODEL", "gemini-2.5-flash")
 OUTREACH_CSV = Path(os.environ.get("OUTREACH_CSV", ROOT / "outreach.csv")).resolve()
 FOLLOWUP_DAYS = int(os.environ.get("FOLLOWUP_DAYS", "35"))
 OUTREACH_FIELDS = [
-    "sent_at", "name", "url", "company", "mentor_type", "channel",
+    "sent_at", "name", "url", "company", "mentor_type", "area", "channel",
     "followup_due", "status", "notes",
 ]
+AREAS = (
+    "firmware-platform", "embedded-security", "low-power-wireless", "embedded-linux",
+    "hardware-pcb-power", "silicon-soc-fpga", "automotive-safety", "edge-ai-dsp",
+    "robotics-control", "other",
+)
 
 API_KEY = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
 if not API_KEY:
@@ -242,13 +247,16 @@ STEP 1 - Classify the mentor type this person can realistically be (unless one i
   technical  hands-on expert in the candidate's stack (embedded C/C++, RTOS, BLE, PCB, ESP32/STM32, Zephyr, power electronics), open-source maintainer, DevRel, FAE, author. Can critique the candidate's work.
   industry   professor, university staff, alumni of the candidate's university, former manager/colleague, recruiter, founder in the local ecosystem. Can open doors and say what the market wants.
 
-STEP 2 - Score fit 0-100: how worthwhile is contacting THIS person for the candidate's fork? Penalize: unrelated field, same seniority as candidate, no overlap with the fork, profile too thin to personalize. Reward: shared school/city/company, a transition matching the fork, active in the candidate's stack. Be blunt in fit_reason; if fit < 40, say to skip and why.
+STEP 1b - Tag the area this person actually works in, one of: firmware-platform, embedded-security, low-power-wireless, embedded-linux, hardware-pcb-power, silicon-soc-fpga, automotive-safety, edge-ai-dsp, robotics-control, other. Pick the one that describes most of their recent work, not their title.
+
+STEP 2 - Score fit 0-100: how worthwhile is contacting THIS person for the candidate's fork? Penalize: unrelated field, same seniority as candidate, no overlap with the fork, profile too thin to personalize. Reward: shared school/city/company, a transition matching the fork, active in the candidate's stack. For an exploration fork, "no overlap with the fork" does not apply: a clear, senior representative of any embedded area is a good target. Be blunt in fit_reason; if fit < 40, say to skip and why.
 
 STEP 3 - Write the messages. Content rules:
   - Never use the words "mentor", "mentorship", "pick your brain", "passionate", "reaching out", "impressive", "inspiring", or any "hope this ... finds you well" opener.
   - Exactly ONE concrete, numeric achievement from the CV (e.g. "6-month battery life", "99% idle-power cut", "sub-100 ms BLE protocol"). Pick the one closest to the recipient's world. Optional in connection_note, but it MUST appear in message and email_body - it is the proof the candidate is worth 20 minutes.
   - "why_you" must cite ONE specific item from their profile (a role change, a company, a project, a post) - no generic flattery. If the profile is too thin to do this, say so in fit_reason and keep why_you factual.
-  - The ask is small and bounded: about 20 minutes, ONE specific question that comes from the candidate's fork. The question itself is written out in the message.
+  - The ask is small and bounded: about 20 minutes, ONE specific question. The question itself is written out in the message.
+  - The candidate's fork is either a DILEMMA ("stuck between A and B") or an EXPLORATION ("early career, talking to people across areas before choosing"). Dilemma: the question comes from the fork and targets the recipient's side of it. Exploration: the question is about the reality of THEIR area only, e.g. what a normal week actually looks like, what they'd tell someone starting in it, what people complain about after a year, whether they'd pick it again today. Never ask "which area should I choose" and never list the areas he is considering; one sentence saying he's talking to people across embedded before choosing is enough.
   - Type-specific ask: career -> ask about the transition they made; technical -> the question MUST be a technical one from their domain (e.g. a deep-sleep vs light-sleep trade-off, when to push power sequencing into hardware), never a career question, and offer to send one concrete design (portfolio link from the CV); industry -> ask for a coffee / office hour and what the local market currently hires for. Never ask for a referral or a job in a first message.
   - If the recipient is a professor or holds "Prof." / "Dr." in their name or headline, address them as "Prof. <surname>" (or "Dr. <surname>") in every text, DM included. Never by first name.
   - Use ONLY facts that appear in the CV or in the recipient's profile. Never invent a project, number, company, event or conversation. If you need a fact you do not have, write a placeholder in square brackets for the candidate to fill, e.g. [what you did since].
@@ -276,6 +284,7 @@ Outputs:
 Output STRICT JSON only, no markdown. Schema:
 {
   "mentor_type": "<career|technical|industry>",
+  "area": "<one of the area tags from STEP 1b>",
   "fit_score": <int 0-100>,
   "fit_reason": "<one or two blunt sentences>",
   "why_you": "<the specific profile item you anchored on>",
@@ -298,6 +307,7 @@ AI_TELLS = (
     "touch base", "looking forward", "thank you for your time", "best regards",
     "kind regards", "i hope", "hope you're", "hope you are", "just following up",
     "wanted to follow up", "since we last", "we last spoke", "we spoke", "we connected",
+    "circling back", "circle back", "in case it got lost", "re-send", "resend", "bumping this",
 )
 FOLLOWUP_PLACEHOLDER = "[one concrete thing you did since - fill in]"
 # The bounded ask itself carries a number; it must not count as the achievement.
@@ -394,9 +404,11 @@ def draft_outreach(cv_text: str, fork: str, profile: dict, mentor_type: str) -> 
                 data["fit_score"] = int(data.get("fit_score", 0))
             except Exception:
                 data["fit_score"] = 0
-            for k in ("mentor_type", "fit_reason", "why_you", "connection_note",
+            for k in ("mentor_type", "area", "fit_reason", "why_you", "connection_note",
                       "message", "email_subject", "email_body", "follow_up"):
                 data.setdefault(k, "")
+            if data.get("area") not in AREAS:
+                data["area"] = "other"
             # The model occasionally re-classifies despite the FORCED line.
             if mentor_type != "auto":
                 data["mentor_type"] = mentor_type
@@ -534,6 +546,7 @@ def outreach_log():
         "url": (body.get("url") or "").strip(),
         "company": (body.get("company") or "").strip(),
         "mentor_type": (body.get("mentor_type") or "").strip(),
+        "area": (body.get("area") or "").strip(),
         "channel": (body.get("channel") or "").strip(),
         "followup_due": (now + timedelta(days=FOLLOWUP_DAYS)).strftime("%Y-%m-%d"),
         "status": "sent",

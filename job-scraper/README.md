@@ -118,9 +118,63 @@ When someone replies: open `helper/outreach.csv` (Excel/Notepad), change that ro
 |---|---|
 | Max **5–8 messages per day**. LinkedIn flags bulk notes to strangers; quality beats volume anyway. | Never automate sending. Never paste in a loop. |
 | Read every draft before Send. The tool drafts; you are responsible for what goes out. | Never send a follow-up with the `[fill in]` placeholder still in it. |
-| Week 1: five people across the three types (2 career, 2 technical, 1 industry — e.g. your ex-manager at Stratobotic). See which type answers. | Don't ask for a referral or a job in a first message. The prompt won't; don't add it by hand. |
+| Exploration mode (§D2): two people per area, one or two calls a week. Start with the easy ones (ex-manager at Stratobotic, PoliTo alumni). | Don't ask for a referral or a job in a first message. The prompt won't; don't add it by hand. |
 | Fill the follow-up placeholder with something real. | Don't invent achievements when editing. Everything in the drafts is from the CV on purpose. |
 | Target people **5–8 years ahead** of you — they remember your fork and have time. | Skip people 20 years ahead, same seniority as you, or unrelated field (fit score will say so). |
+
+### D2. Exploring instead of deciding (current mode)
+
+Early career, no specialization picked yet. The goal of the next three months is a map
+of embedded, not a choice. The "fork" field then reads like this (this is what to put in
+Options right now):
+
+```
+I'm early in my career (2 years of product firmware on ESP32-S3, some PCB, some robotics)
+and I don't want to pick a specialization yet. I'm talking to people across embedded
+(firmware, security, Linux, hardware, silicon, automotive, edge AI, robotics) to understand
+what each one is really like day to day before I choose.
+```
+
+With an exploration fork the drafts change shape: the question is about the reality of
+*their* area (what a normal week is, what they'd tell someone starting, what people complain
+about after a year, whether they'd pick it again). They never ask "which should I choose"
+and never list the areas.
+
+Each draft is tagged with an `area` (shown in the popup, written to `outreach.csv`) so you
+can see coverage. Target: **two people per area**, 16 conversations, one or two a week.
+
+| area tag | who to search for | area-specific question |
+|---|---|---|
+| `firmware-platform` | Senior/Staff Firmware @ Nordic, Espressif, Silicon Labs, ST | how much of your week is new code vs debugging someone else's |
+| `embedded-security` | Product/Firmware Security @ ST secure MCU, NXP, Infineon; automotive cyber @ Stellantis, Marelli | how much is engineering vs compliance and paperwork |
+| `embedded-linux` | BSP/platform engineer at camera, gateway, robotics companies; Bootlin, Toradex | what made you leave bare-metal for Linux, any regrets |
+| `hardware-pcb-power` | Hardware engineer @ Leonardo, Marelli, Turin startups | in the first 3 years how much is design vs BOM and suppliers |
+| `silicon-soc-fpga` | Design/Verification @ ST Agrate, Infineon Villach | what does someone with product-firmware background lose and gain going into silicon |
+| `automotive-safety` | @ Stellantis/CRF, Marelli, Italdesign, Bosch Italia | what do outsiders get wrong about automotive work |
+| `edge-ai-dsp` | ML-on-edge @ Arduino, ST (STM32 AI), vision startups | how much ML vs embedded do you need, which is harder to learn late |
+| `robotics-control` | @ Comau, PoliTo spin-offs | where's the line between robotics engineer and embedded engineer in your team |
+
+**Ask everyone the same four questions** after the area-specific one, so answers compare:
+
+1. What does a normal week actually look like, not the job description?
+2. If you were 25 today with what you know, would you pick this area again? Why?
+3. What do people entering this area usually complain about after a year?
+4. Bigger or smaller in five years, and why?
+
+**After every call, same day**, five lines in a private file (`exploration.md`, outside the
+repo):
+
+```
+area | name | date
+my energy after the call: up / flat / down      <- the signal that matters most
+one thing I didn't know:
+one thing that scared me:
+talk to them again? yes / no
+```
+
+After 16, read the energy column first. The answer is usually there before any analysis.
+Then switch the fork field to a dilemma ("stuck between A and B") and the drafts switch
+shape with it.
 
 ### E. What the output looks like
 
@@ -163,13 +217,10 @@ and a banned list (leverage, journey, insights, keen, fellow, "happy to work aro
 schedule", "since we spoke", ...). A lint in the helper rejects drafts that break these
 and asks the model once more; the fill-in placeholder must survive untouched.
 
-### F. Who to look for (LinkedIn search)
+### F. Who to look for
 
-| type | search | good sign |
-|---|---|---|
-| `career` | `"Staff Firmware" OR "Principal Embedded" OR "Embedded Lead"`, Europe | a visible *transition* in Experience: HW→FW, IC→lead, big co→startup, moved country |
-| `technical` | `Espressif`, `Nordic Semiconductor`, `Zephyr`, `"Field Application Engineer" BLE` | GitHub linked, posts technical content, maintains something |
-| `industry` | School: Politecnico di Torino + Company: STMicroelectronics / Leonardo / Comau / Reply | alumni who graduated 2015–2020 and are now senior |
+See the area table in §D2. For a dilemma fork, aim 5-8 years ahead of you: they remember
+your question and still have time. Skip people 20 years ahead or at your own seniority.
 
 ### G. Troubleshooting
 
@@ -190,7 +241,7 @@ Prompt: `helper/server.py → OUTREACH_INSTRUCTIONS` (content rules + voice rule
 `draft_problems()`: AI-tell words, dashes as asides, exclamation marks, missing CV number,
 missing follow-up placeholder → one retry with the problems listed. `draft_outreach()` also
 enforces the forced type and strips a "hope this finds you well" opener. Tracker: `helper/outreach.csv` (columns `sent_at, name, url,
-company, mentor_type, channel, followup_due, status, notes`) — **gitignored, real names**.
+company, mentor_type, area, channel, followup_due, status, notes`) — **gitignored, real names**.
 CORS is limited to `chrome-extension://` origins because `/cv` and `/outreach/due` expose
 personal data. Env: `OUTREACH_MODEL`, `FOLLOWUP_DAYS`, `OUTREACH_CSV`.
 
