@@ -15,6 +15,9 @@ Hard rules for this folder:
 - Drafts must contain only facts from `public/Ali_Mansouri_CV.md` or the
   recipient's profile. If a draft invents a project/number, that is a bug in
   `OUTREACH_INSTRUCTIONS` — fix the prompt, do not hand-edit the fabrication in.
+- Drafts must not read as machine-written. Voice rules in `OUTREACH_INSTRUCTIONS`
+  STEP 4 follow the `humanize-writing` skill; `draft_problems()` is the lint.
+  When adding a rule, add it to both, and check it against a real draft.
 
 Typical tasks and where to look:
 

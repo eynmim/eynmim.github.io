@@ -127,30 +127,41 @@ When someone replies: open `helper/outreach.csv` (Excel/Notepad), change that ro
 Real run against a test profile ("Marco", PCB at ST → firmware → Staff FW at Nordic,
 PoliTo alumnus). Fit 95, type `career`. Nothing here is edited.
 
-**Connection note** (117/300)
-> Hi Marco, fellow PoliTo alumnus. Your move from PCB to firmware interests me. Would value 20 min on career direction.
+**Connection note** (140/300)
+> Your move from PCB design at ST to firmware architect at Nordic is exactly what I'm weighing. Mind if I ask you one thing about it sometime?
 
 **LinkedIn message**
 > Hi Marco,
-> I am Ali Mansouri, a Politecnico di Torino alumnus who led the firmware architecture of an IoT camera that achieved over 6 months of battery life.
-> I saw you moved from Hardware Engineer (PCB) to Senior Firmware Engineer at STMicroelectronics.
-> I am currently deciding whether to deepen PCB design or focus on firmware architecture. What was the biggest challenge in your transition from hardware to firmware?
-> Would you have 20 minutes in the next few weeks? Happy to work around your schedule.
+>
+> I'm an embedded engineer from PoliTo, currently designing an IoT product that achieved 6+ months battery life by cutting idle power 99%. I'm trying to decide between specializing in hardware/PCB or becoming a firmware architect.
+>
+> Your career path, moving from PCB design at ST to leading the BLE stack at Nordic, is the one I'm looking at. Did you ever regret leaving the hardware side completely? Could I ask you that properly over a call, 20 min max?
 
-**Email** — subject `PoliTo alumnus: PCB to firmware career path`, same five lines, then:
+**Email** — subject `PoliTo alumnus: PCB to firmware, one question`, same content, one
+sentence longer, then:
+> Thanks,
 > Ali Mansouri
 > MSc Computer Engineering, Politecnico di Torino
-> Turin, Italy
 > eynmim.github.io
 
 **Follow-up** (5 weeks, no reply)
-> Hi Marco,
-> Just following up on my message. I have since [one concrete thing you did since - fill in].
-> I am still keen to hear what was the biggest challenge in your transition from hardware to firmware. Would you have 20 minutes?
+> Hi Marco, I wrote a few weeks ago about your move from PCB to firmware. Since I wrote, I've [one concrete thing you did since - fill in]. Still wondering if you ever regretted leaving hardware completely. Could I ask you that over a very short call?
 
-Shape of every DM: greeting · who I am + ONE number from the CV · ONE fact from *their*
-profile · ONE question derived from your fork · a 20-minute bounded ask. Never the word
-"mentor", never "passionate", never a referral request.
+Two more from the same run, so you can see the shape is *not* a template:
+
+*technical* (Developer Advocate at Espressif who writes the ESP-IDF power docs), note:
+> Your ESP-IDF power management docs helped me a lot. Mind if I ask you one thing about low-power design sometime?
+
+*industry* (PoliTo professor, ex-ST), DM opens with `Prof. Sample,` never a first name:
+> Your background at STMicroelectronics and as a professor here is very relevant. What kind of embedded roles do you see the local market hiring for right now? Would a short call be ok, whenever suits you?
+
+Every DM contains: ONE number from the CV, ONE fact from *their* profile, ONE question
+that sounds like coffee talk not an interview, and a short ask in different words each
+time. The voice rules come from the `humanize-writing` skill: contractions, varied
+sentence length, no em dashes, no lists of three, no "I am Ali Mansouri, a..." opener,
+and a banned list (leverage, journey, insights, keen, fellow, "happy to work around your
+schedule", "since we spoke", ...). A lint in the helper rejects drafts that break these
+and asks the model once more; the fill-in placeholder must survive untouched.
 
 ### F. Who to look for (LinkedIn search)
 
@@ -168,15 +179,17 @@ profile · ONE question derived from your fork · a 20-minute bounded ask. Never
 | "Could not read a profile from this page" | not on a `/in/` URL, or page not loaded — scroll, retry |
 | name/headline blank but a draft came | LinkedIn changed its DOM. F12 → Console → send the line `[JobMatch:linkedin-profile] … raw N chars`. Drafts still work from raw text meanwhile; fix selectors in `extension/adapters/linkedin-profile.js`. |
 | "GOOGLE_API_KEY not configured" | check `.env`, restart helper |
-| slow draft / 429 in helper console | Gemini free tier; helper retries with backoff, wait a few seconds |
+| slow draft / 429 in helper console | Gemini free tier per-minute limit; helper retries with backoff, wait a few seconds |
+| `502 ... 429 RESOURCE_EXHAUSTED ... exceeded your current quota` | the free tier's **daily** cap on `gemini-2.5-flash` is used up (each draft is 1-2 calls). Resets at midnight Pacific. Normal use (5-8 people/day) never hits it; a long test session does. |
 | draft text looks generic | the **career fork** field in Options is empty |
 | extension behaves oddly after `git pull` | `chrome://extensions` → ⟳ Reload |
 
 ### H. Internals
 
-Prompt: `helper/server.py → OUTREACH_INSTRUCTIONS`. Post-processing in `draft_outreach()`
-enforces the forced type, strips "I hope this finds you well" openers, and retries once
-if the DM has no number. Tracker: `helper/outreach.csv` (columns `sent_at, name, url,
+Prompt: `helper/server.py → OUTREACH_INSTRUCTIONS` (content rules + voice rules). Lint in
+`draft_problems()`: AI-tell words, dashes as asides, exclamation marks, missing CV number,
+missing follow-up placeholder → one retry with the problems listed. `draft_outreach()` also
+enforces the forced type and strips a "hope this finds you well" opener. Tracker: `helper/outreach.csv` (columns `sent_at, name, url,
 company, mentor_type, channel, followup_due, status, notes`) — **gitignored, real names**.
 CORS is limited to `chrome-extension://` origins because `/cv` and `/outreach/due` expose
 personal data. Env: `OUTREACH_MODEL`, `FOLLOWUP_DAYS`, `OUTREACH_CSV`.

@@ -244,26 +244,34 @@ STEP 1 - Classify the mentor type this person can realistically be (unless one i
 
 STEP 2 - Score fit 0-100: how worthwhile is contacting THIS person for the candidate's fork? Penalize: unrelated field, same seniority as candidate, no overlap with the fork, profile too thin to personalize. Reward: shared school/city/company, a transition matching the fork, active in the candidate's stack. Be blunt in fit_reason; if fit < 40, say to skip and why.
 
-STEP 3 - Write the messages. Hard rules:
+STEP 3 - Write the messages. Content rules:
   - Never use the words "mentor", "mentorship", "pick your brain", "passionate", "reaching out", "impressive", "inspiring", or any "hope this ... finds you well" opener.
   - Exactly ONE concrete, numeric achievement from the CV (e.g. "6-month battery life", "99% idle-power cut", "sub-100 ms BLE protocol"). Pick the one closest to the recipient's world. Optional in connection_note, but it MUST appear in message and email_body - it is the proof the candidate is worth 20 minutes.
   - "why_you" must cite ONE specific item from their profile (a role change, a company, a project, a post) - no generic flattery. If the profile is too thin to do this, say so in fit_reason and keep why_you factual.
-  - The ask is small and bounded: 20 minutes, ONE specific question that comes from the candidate's fork. Phrase the question itself in the message.
-  - Type-specific ask: career -> ask about the transition they made; technical -> ask about one technical decision in their domain and offer to send one concrete design (portfolio link from the CV); industry -> ask for a coffee / office hour and what the local market currently hires for. Never ask for a referral or a job in a first message.
-  - Plain, direct English. No exclamation marks. No emojis. Candidate is a non-native speaker; keep sentences short.
+  - The ask is small and bounded: about 20 minutes, ONE specific question that comes from the candidate's fork. The question itself is written out in the message.
+  - Type-specific ask: career -> ask about the transition they made; technical -> the question MUST be a technical one from their domain (e.g. a deep-sleep vs light-sleep trade-off, when to push power sequencing into hardware), never a career question, and offer to send one concrete design (portfolio link from the CV); industry -> ask for a coffee / office hour and what the local market currently hires for. Never ask for a referral or a job in a first message.
+  - If the recipient is a professor or holds "Prof." / "Dr." in their name or headline, address them as "Prof. <surname>" (or "Dr. <surname>") in every text, DM included. Never by first name.
   - Use ONLY facts that appear in the CV or in the recipient's profile. Never invent a project, number, company, event or conversation. If you need a fact you do not have, write a placeholder in square brackets for the candidate to fill, e.g. [what you did since].
 
+STEP 4 - Voice. These messages must read as if the candidate typed them himself on his phone. A 25-year-old engineer, fluent but not native, direct, slightly informal. If a recruiter would guess "ChatGPT wrote this", you failed. Rules:
+  - Contractions are normal: I'm, I've, don't, that's, you've.
+  - Do NOT open with "I am <name>, a <role>...". His name is on the profile. Open with the thing about THEM, or with the question, or with one blunt sentence about where he is. Introduce himself in half a clause later, or not at all in the DM.
+  - Vary sentence length. At least one sentence under six words. One can run longer.
+  - No em dashes (the character "-" between words as an aside), no semicolons, no bullet points, no bold, no emojis, no exclamation marks. Commas and full stops only.
+  - No lists of three. If you catch yourself writing "X, Y and Z", cut one.
+  - Banned words and phrases (AI tells): leverage, navigate, journey, landscape, delve, insight(s), keen, resonate, robust, seamless, transformative, pivotal, valuable, align(s/ed), fellow, "came across your profile", "I would love to", "I'd greatly appreciate", "would value", "happy to work around your schedule", "in the next few weeks", "quick question", "touch base", "looking forward", "thank you for your time", "best regards", "kind regards", "I hope".
+  - The anchor line must not always start with "I saw you moved from". Other shapes: "You went from X to Y.", "Your ST-to-Nordic move is the one I'm weighing.", "You did the PCB-to-firmware switch.", or fold it into the question.
+  - The question should sound like something you'd ask over coffee, not in an interview. Not "what was the biggest challenge in your transition" but "did you ever regret leaving the hardware side?" or "how did you know it was time to switch?".
+  - The ask is one short sentence in his own words, different every time: "20 min on a call some week?", "Would a short call be ok, whenever suits you?", "Could I ask you that properly over a call, 20 min max?". Never the same canonical line twice.
+  - A DM is signed "Ali" or not at all. Email sign-off is plain: "Thanks," then name, degree and university, portfolio link. Nothing else.
+  - It's fine to be a bit blunt or self-aware: "Honest question.", "Not asking for a job.", "Feel free to ignore if you're busy."
+
 Outputs:
-  connection_note   <= 280 characters INCLUDING spaces (LinkedIn connect-note limit is 300). One line. Name + one hook + "would value 20 min on <topic>".
-  message           LinkedIn DM, <= 650 characters, exactly this shape:
-                      line 1: "Hi <first name>,"
-                      line 2: who I am in one clause + the ONE numeric achievement (e.g. "I led the firmware of an ESP32-S3 IoT camera that runs 6 months on a battery").
-                      line 3: why_you, starting with "I saw ..." / "You moved from ..." - one specific fact from their profile.
-                      line 4: the ONE question, written out, derived from the fork.
-                      line 5: "Would you have 20 minutes in the next few weeks? Happy to work around your schedule."
-  email_subject     <= 60 chars, specific, no clickbait.
-  email_body        <= 900 characters. Same five lines as message, then a sign-off: name, degree + university, city, portfolio link from the CV. No extra paragraphs.
-  follow_up         2-3 lines to send if there is no reply after 5 weeks. Line 2 must be exactly one sentence built around the literal placeholder [one concrete thing you did since - fill in] - do NOT invent what it is. Then re-ask once, same question. No guilt, no apology.
+  connection_note   <= 280 characters INCLUDING spaces (LinkedIn connect-note limit is 300). One or two sentences, the kind of thing a person types into the connect box: one specific hook about them plus "mind if I ask you one thing about it sometime?" in his own words. No numeric achievement needed here.
+  message           LinkedIn DM, 250-600 characters, 3-5 sentences in 2-3 short paragraphs (blank line between). Must contain: the ONE numeric achievement, the ONE anchor about them, the ONE question written out, the bounded ask. Order is free. Greeting "Hi <first name>," or just "<first name>,".
+  email_subject     <= 60 chars, specific, no clickbait, lowercase after the first word is fine ("PCB to firmware, one question").
+  email_body        <= 900 characters. Same content and voice as message, may be one sentence longer, then the plain sign-off described above.
+  follow_up         2-3 sentences to send if there is no reply after 5 weeks. One sentence built around the literal placeholder [one concrete thing you did since - fill in], copied exactly, brackets included - do NOT fill it in or invent what it is. You never spoke, so "since I wrote" / "since my last message", never "since we spoke". Re-ask once, same question, shorter. No guilt, no apology, no "just following up".
 
 Output STRICT JSON only, no markdown. Schema:
 {
@@ -279,9 +287,50 @@ Output STRICT JSON only, no markdown. Schema:
 }"""
 
 
+# Words and phrases that read as machine-written (from the humanize-writing
+# skill's tell list, trimmed to what shows up in short cold messages).
+AI_TELLS = (
+    "mentor", "passionate", "pick your brain", "reaching out", "impressive", "inspiring",
+    "leverage", "navigate", "journey", "landscape", "delve", "insight", "keen", "resonate",
+    "robust", "seamless", "transformative", "pivotal", "valuable", "fellow",
+    "came across your profile", "i would love to", "i'd greatly appreciate", "would value",
+    "happy to work around your schedule", "in the next few weeks", "quick question",
+    "touch base", "looking forward", "thank you for your time", "best regards",
+    "kind regards", "i hope", "hope you're", "hope you are", "just following up",
+    "wanted to follow up", "since we last", "we last spoke", "we spoke", "we connected",
+)
+FOLLOWUP_PLACEHOLDER = "[one concrete thing you did since - fill in]"
+# The bounded ask itself carries a number; it must not count as the achievement.
+ASK_NUMBERS = re.compile(r"\b20[- ]?(min|minute)", re.IGNORECASE)
+
+
+def draft_problems(data: dict) -> list[str]:
+    """Rule violations worth one retry. Empty list means the draft passes."""
+    out = []
+    dm = str(data.get("message") or "")
+    if not re.search(r"\d", ASK_NUMBERS.sub("", dm)):
+        out.append("'message' has no numeric achievement from the CV")
+    if len(dm) > 700:
+        out.append(f"'message' is {len(dm)} chars, keep it under 600")
+    if FOLLOWUP_PLACEHOLDER not in str(data.get("follow_up") or ""):
+        out.append(f"'follow_up' must contain the literal placeholder {FOLLOWUP_PLACEHOLDER}")
+    for k in ("connection_note", "message", "email_body", "follow_up"):
+        # Bracketed placeholders are ours, not the model's prose.
+        t = re.sub(r"\[[^\]]*\]", "", str(data.get(k) or ""))
+        low = t.lower()
+        hits = [w for w in AI_TELLS if w in low]
+        if hits:
+            out.append(f"'{k}' uses banned words: {', '.join(hits)}")
+        if "—" in t or " - " in t:
+            out.append(f"'{k}' uses a dash as an aside; use a comma or full stop")
+        if "!" in t:
+            out.append(f"'{k}' has an exclamation mark")
+    return out
+
+
 # "Hi Marco,\nI hope this message finds you well. ..." -> group 1 keeps the greeting.
 FILLER_OPENER = re.compile(
-    r"^(\s*(?:hi|hello|dear)\b[^\n.!?]*?(?:,|\n)\s*)?I hope (?:this|you)[^.!?\n]*[.!?][ \t]*",
+    r"^(\s*(?:hi|hello|dear)\b[^\n.!?]*?(?:,|\n)\s*)?(?:I )?hope (?:this|you)[^.!?\n]*[.!?][ \t]*",
     re.IGNORECASE,
 )
 
@@ -321,7 +370,7 @@ def draft_outreach(cv_text: str, fork: str, profile: dict, mentor_type: str) -> 
         system_instruction=f"{OUTREACH_INSTRUCTIONS}\n\nCANDIDATE CV:\n\n{cv_text}",
         response_mime_type="application/json",
         max_output_tokens=1800,
-        temperature=0.5,
+        temperature=0.8,
         thinking_config=genai_types.ThinkingConfig(thinking_budget=0),
     )
     contents = profile_to_prompt(profile, fork, mentor_type)
@@ -334,18 +383,12 @@ def draft_outreach(cv_text: str, fork: str, profile: dict, mentor_type: str) -> 
             data = extract_json(resp.text or "")
             if not data:
                 raise ValueError("model returned no JSON")
-            # Cheap guard for the rule models drop most often: the DM must
-            # carry the one numeric achievement. Ask once more, then accept
+            # Cheap lint for the rules models drop most often. Ask once more
+            # with the specific problems, then accept whatever comes back
             # (never on the last attempt - a draft beats an error).
-            if (
-                not re.search(r"\d", data.get("message", ""))
-                and "REMINDER" not in contents
-                and attempt < MAX_RETRIES - 1
-            ):
-                contents += (
-                    "\n\nREMINDER: your previous draft had no numeric achievement in "
-                    "'message'. Line 2 must contain one number from the CV."
-                )
+            problems = draft_problems(data)
+            if problems and "REMINDER" not in contents and attempt < MAX_RETRIES - 1:
+                contents += "\n\nREMINDER: your previous draft broke these rules, fix them: " + "; ".join(problems)
                 continue
             try:
                 data["fit_score"] = int(data.get("fit_score", 0))
