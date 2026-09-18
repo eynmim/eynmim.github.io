@@ -13,6 +13,10 @@ cd ../helper
 ./.venv/bin/python ../test/helper_test.py     # lint + tracker endpoints
 ```
 
+`popup.test.js` checks that every element the popup toggles actually hides. It exists
+because `#mentor-row { display: flex }` outranked the UA stylesheet's `[hidden]`, so
+"Draft message" showed on the LinkedIn feed, where reading a profile cannot work.
+
 `search.test.js` checks the coverage badges, the daily counter, the LinkedIn URLs each
 button builds, and the ~15-term truncation warning from TITLES.md.
 

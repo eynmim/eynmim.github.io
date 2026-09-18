@@ -12,6 +12,11 @@
 
 * { box-sizing: border-box; }
 
+/* Any rule that sets `display` outranks the UA stylesheet's [hidden] and leaves
+   the element on screen. Belt and braces: this, plus :not([hidden]) on every
+   layout rule below that targets a element the popup toggles. */
+[hidden] { display: none !important; }
+
 body {
   width: 480px;
   max-height: 600px;
@@ -131,7 +136,7 @@ button.secondary {
 .tag.missing { border-color: rgba(247, 118, 142, 0.4); color: var(--bad); }
 
 /* --- MentorMatch (LinkedIn profile pages) --- */
-#mentor-row {
+#mentor-row:not([hidden]) {
   display: flex;
   align-items: center;
   gap: 10px;
