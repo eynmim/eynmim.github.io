@@ -13,6 +13,11 @@ cd ../helper
 ./.venv/bin/python ../test/helper_test.py     # lint + tracker endpoints
 ```
 
+`adapter.test.js` runs the profile adapter against two synthetic pages: the DOM it was
+written for, and the shape LinkedIn moved to (no `<h1>`, old class names gone, entries
+that are not `<li>`). It asserts `name` comes back non-empty on both, because that is
+what `Mark as sent` writes into the tracker.
+
 `popup.test.js` checks that every element the popup toggles actually hides. It exists
 because `#mentor-row { display: flex }` outranked the UA stylesheet's `[hidden]`, so
 "Draft message" showed on the LinkedIn feed, where reading a profile cannot work.

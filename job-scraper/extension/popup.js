@@ -337,7 +337,7 @@ async function onDiagnose() {
     if (!tab?.id) throw new Error("No active tab.");
     const resp = await chrome.runtime.sendMessage({ type: "diagnoseProfile", tabId: tab.id });
     if (!resp?.ok) throw new Error(backgroundError(resp));
-    lastDiag = diagReport(resp.profile);
+    lastDiag = diagReport(resp.profile, resp.probe);
     els.diagBody.textContent = lastDiag;
     els.diag.hidden = false;
     setProgress("");
@@ -349,7 +349,7 @@ async function onDiagnose() {
   }
 }
 
-function diagReport(profile) {
+function diagReport(profile, probe) {
   const lines = [`url ${profile.url || "(none)"}`];
   for (const key of DIAG_FIELDS) {
     const v = profile[key];
@@ -359,6 +359,21 @@ function diagReport(profile) {
     const filled = isList ? v.length > 0 : !!String(v || "").trim();
     lines.push(`${filled ? "ok   " : "EMPTY"} ${key.padEnd(10)} ${size.padEnd(9)} ${sample.slice(0, 48)}`);
   }
+  if (!probe) return lines.join("\n");
+
+  // Structure, for when a field is still empty and the selectors need redoing.
+  lines.push("", "PROBE");
+  lines.push(`  title        ${probe.title}`);
+  lines.push(`  main         ${probe.hasMain ? "yes" : "NO"}   sections ${probe.sectionsInMain}`);
+  lines.push(`  h1           ${probe.h1Count}${probe.h1Texts?.length ? ` -> ${probe.h1Texts.join(" | ")}` : ""}`);
+  const a = probe.anchors || {};
+  lines.push(`  anchors      about ${a.about ? "y" : "n"}  experience ${a.experience ? "y" : "n"}  education ${a.education ? "y" : "n"}`);
+  const o = probe.oldSelectors || {};
+  lines.push(`  old classes  headline ${o.headline ? "match" : "GONE"}  location ${o.location ? "match" : "GONE"}`);
+  lines.push(`  experience   ${probe.experienceCard}`);
+  lines.push(`  education    ${probe.educationCard}`);
+  lines.push("  top card lines:");
+  for (const l of probe.topCardLines || []) lines.push(`    | ${l}`);
   return lines.join("\n");
 }
 

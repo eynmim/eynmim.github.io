@@ -13,8 +13,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true;
   }
   if (msg?.type === "diagnoseProfile") {
-    readProfile(msg.tabId)
-      .then((profile) => sendResponse({ ok: true, profile }))
+    readProfile(msg.tabId, true)
+      .then((data) => sendResponse({ ok: true, ...data }))
       .catch((err) => sendResponse({ ok: false, error: err.message || String(err) }));
     return true;
   }
@@ -113,29 +113,32 @@ async function loadHelperAndCv() {
 // Inject the profile adapter and run it. Shared by draftOutreach and by the
 // popup's DOM check, which reports what came back without calling anything —
 // LinkedIn changes its DOM often enough that finding out should be free.
-async function readProfile(tabId) {
+async function readProfile(tabId, withProbe) {
   await chrome.scripting.executeScript({
     target: { tabId, allFrames: false },
     files: ["adapters/linkedin-profile.js"],
   });
   const [{ result: scrape }] = await chrome.scripting.executeScript({
     target: { tabId, allFrames: false },
-    func: () => {
+    func: (probeToo) => {
       const a = window.__JOBMATCH_PROFILE_ADAPTER;
       if (!a) return { error: "Profile adapter did not load." };
       try {
-        return { profile: a.collectProfile() };
+        const out = { profile: a.collectProfile() };
+        if (probeToo && a.probeDom) out.probe = a.probeDom();
+        return out;
       } catch (e) {
         return { error: e.message || String(e) };
       }
     },
+    args: [!!withProbe],
   });
   if (scrape?.error) throw new Error(`Scrape failed: ${scrape.error}`);
   const profile = scrape?.profile;
   if (!profile || (!profile.name && !profile.raw)) {
     throw new Error("Could not read a profile from this page. Open a linkedin.com/in/<name> page and scroll once so it loads.");
   }
-  return profile;
+  return withProbe ? { profile, probe: scrape.probe } : profile;
 }
 
 async function draftOutreach(tabId, mentorType) {

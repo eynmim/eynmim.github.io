@@ -3,7 +3,7 @@
   "private": true,
   "description": "Headless checks for the JobMatch extension pages and the helper's tracker endpoints.",
   "scripts": {
-    "test": "node popup.test.js && node search.test.js && node batch.test.js"
+    "test": "node adapter.test.js && node popup.test.js && node search.test.js && node batch.test.js"
   },
   "devDependencies": {
     "jsdom": "^24.0.0"
