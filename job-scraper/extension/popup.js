@@ -27,6 +27,12 @@ const els = {
   diag: document.getElementById("diag"),
   diagBody: document.getElementById("diag-body"),
   diagCopy: document.getElementById("diag-copy"),
+  peopleRow: document.getElementById("people-row"),
+  triageBtn: document.getElementById("triage-btn"),
+  triage: document.getElementById("triage"),
+  triageSummary: document.getElementById("triage-summary"),
+  peopleList: document.getElementById("people-list"),
+  hideSkip: document.getElementById("hide-skip"),
   due: document.getElementById("due"),
   outreach: document.getElementById("outreach"),
   fitScore: document.getElementById("fit-score"),
@@ -49,6 +55,7 @@ const els = {
 let lastResults = [];
 let lastOutreach = null; // { profile, draft }
 let lastDiag = "";
+let lastTriage = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
   els.settingsLink.addEventListener("click", (e) => {
@@ -71,6 +78,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   els.draftBtn.addEventListener("click", onDraft);
   els.diagBtn.addEventListener("click", onDiagnose);
   els.diagCopy.addEventListener("click", onCopyDiag);
+  els.triageBtn.addEventListener("click", onTriage);
+  els.hideSkip.addEventListener("change", renderTriage);
   els.note.addEventListener("input", updateNoteLen);
   els.gmailBtn.addEventListener("click", onOpenGmail);
   els.markSentBtn.addEventListener("click", onMarkSent);
@@ -84,6 +93,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     els.scanRow.hidden = true;
     els.mentorRow.hidden = false;
     showDueFollowups();
+  } else if (isPeopleSearchUrl(tab?.url || "")) {
+    els.scanRow.hidden = true;
+    els.peopleRow.hidden = false;
+    showDueFollowups();
   }
 });
 
@@ -91,6 +104,15 @@ function isProfileUrl(url) {
   try {
     const u = new URL(url);
     return u.hostname.endsWith("linkedin.com") && /^\/in\/[^/]+/.test(u.pathname);
+  } catch {
+    return false;
+  }
+}
+
+function isPeopleSearchUrl(url) {
+  try {
+    const u = new URL(url);
+    return u.hostname.endsWith("linkedin.com") && /^\/search\/results\/people\//.test(u.pathname);
   } catch {
     return false;
   }
@@ -109,6 +131,7 @@ async function getActiveTab() {
 function adapterLabelForUrl(url) {
   if (!url) return "—";
   if (isProfileUrl(url)) return "LinkedIn profile (MentorMatch)";
+  if (isPeopleSearchUrl(url)) return "LinkedIn people search";
   try {
     const host = new URL(url).hostname;
     if (host.endsWith("careerdays.polito.it")) return "careerdays.polito.it";
@@ -321,6 +344,103 @@ function renderOutreach() {
   els.markSentBtn.disabled = false;
   updateNoteLen();
   els.outreach.hidden = false;
+}
+
+// ---------------- triage of a results page ----------------
+
+const VERDICT_ORDER = { draft: 0, maybe: 1, skip: 2 };
+
+async function onTriage() {
+  setError("");
+  setProgress("Reading the cards on this page...");
+  els.triageBtn.disabled = true;
+  els.triage.hidden = true;
+  try {
+    const tab = await getActiveTab();
+    if (!tab?.id) throw new Error("No active tab.");
+    const resp = await chrome.runtime.sendMessage({ type: "triagePeople", tabId: tab.id });
+    if (!resp?.ok) throw new Error(backgroundError(resp));
+    lastTriage = resp.results || [];
+    renderTriage();
+    setProgress("");
+  } catch (e) {
+    setError(e.message || String(e));
+    setProgress("");
+  } finally {
+    els.triageBtn.disabled = false;
+  }
+}
+
+function renderTriage() {
+  if (!lastTriage.length) return;
+  const counts = { draft: 0, maybe: 0, skip: 0 };
+  for (const p of lastTriage) counts[p.verdict] = (counts[p.verdict] || 0) + 1;
+  els.triageSummary.textContent =
+    `${counts.draft} worth opening · ${counts.maybe} unclear · ${counts.skip} skip`;
+
+  const rows = [...lastTriage]
+    .filter((p) => !(els.hideSkip.checked && p.verdict === "skip"))
+    .sort((a, b) =>
+      (VERDICT_ORDER[a.verdict] ?? 3) - (VERDICT_ORDER[b.verdict] ?? 3) ||
+      (b.score ?? 0) - (a.score ?? 0)
+    );
+
+  els.peopleList.innerHTML = "";
+  for (const p of rows) {
+    const li = document.createElement("li");
+    li.className = `person v-${p.verdict}`;
+
+    const head = document.createElement("div");
+    head.className = "job-head";
+    const badge = document.createElement("span");
+    badge.className = `verdict v-${p.verdict}`;
+    badge.textContent = p.verdict;
+    const title = document.createElement("div");
+    title.className = "job-title";
+    const a = document.createElement("a");
+    a.href = p.url || "#";
+    a.textContent = p.name || "(no name)";
+    // Open in a tab rather than inside the popup, which would close it.
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (p.url) chrome.tabs.create({ url: p.url });
+    });
+    title.appendChild(a);
+    const score = document.createElement("span");
+    score.className = `score ${scoreClass(p.score ?? 0)}`;
+    score.textContent = p.score ?? "?";
+    head.append(badge, title, score);
+    li.appendChild(head);
+
+    const meta = document.createElement("div");
+    meta.className = "job-meta";
+    meta.textContent = [p.headline, p.location, p.degree].filter(Boolean).join(" • ");
+    li.appendChild(meta);
+
+    if (p.reason) {
+      const reason = document.createElement("div");
+      reason.className = "job-reason";
+      reason.textContent = p.reason;
+      li.appendChild(reason);
+    }
+    if (p.area) {
+      const tags = document.createElement("div");
+      tags.className = "job-tags";
+      const tag = document.createElement("span");
+      tag.className = "tag";
+      tag.textContent = p.area;
+      tags.appendChild(tag);
+      if (p.open_to_work) {
+        const otw = document.createElement("span");
+        otw.className = "tag missing";
+        otw.textContent = "open to work";
+        tags.appendChild(otw);
+      }
+      li.appendChild(tags);
+    }
+    els.peopleList.appendChild(li);
+  }
+  els.triage.hidden = false;
 }
 
 // LinkedIn changes its DOM often enough that "which field came back empty"

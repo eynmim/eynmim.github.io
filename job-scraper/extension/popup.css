@@ -160,6 +160,32 @@ button.secondary {
   border-radius: 6px;
   font-size: 12px;
 }
+/* --- triage of a people-search results page --- */
+#people-row:not([hidden]) { display: flex; align-items: center; gap: 10px; }
+#people-row .note { color: var(--fg-dim); font-size: 11px; }
+#triage { max-height: 520px; overflow-y: auto; }
+#people-list { list-style: none; margin: 0; padding: 0; }
+#people-list li {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  background: var(--bg-soft);
+}
+#people-list li.v-skip { opacity: 0.55; }
+.verdict {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+.verdict.v-draft { background: var(--good); color: #0f1419; }
+.verdict.v-maybe { background: var(--warn); color: #0f1419; }
+.verdict.v-skip  { border: 1px solid var(--border); color: var(--fg-dim); }
+#triage-summary { color: var(--fg-dim); }
+
 #diag { margin-top: 10px; }
 #diag-body {
   margin: 0;

@@ -579,6 +579,156 @@ def outreach_due():
 AREA_TARGET = int(os.environ.get("AREA_TARGET", "2"))
 
 
+TRIAGE_INSTRUCTIONS = """You triage a page of LinkedIn people-search results for
+someone mapping out embedded engineering before choosing a specialisation.
+
+You see only what a search card shows: name, headline, location, sometimes a
+one-line snippet and the connection degree. That is thin. Judge whether the
+person is WORTH OPENING, not how good the eventual message would be. Say so
+honestly when a card is too thin to tell.
+
+DRAFT (worth opening) when the card suggests:
+- real embedded, firmware, hardware, silicon, automotive, robotics or test work
+- roughly five to eight years ahead of the candidate: senior, staff, lead,
+  principal, or a small-company engineer who clearly does several of these jobs
+- someone who has crossed between areas (hardware to firmware, bare metal to
+  Linux, product to silicon). They can describe more than one area from inside.
+
+SKIP when the card shows:
+- an OPEN TO WORK badge, "seeking", "looking for opportunities": they want help,
+  not to give it
+- a student, intern, or someone who graduated in the last year or two: same
+  stage as the candidate, so there is nothing to ask
+- C-level at a large company, VP, director, twenty years ahead: they rarely
+  answer a cold note from a junior engineer
+- recruiters, sales, marketing, HR
+- a field with no overlap: web, pure AI/ML platforms, finance, aerospace
+  structures, anything where the day-to-day says nothing about embedded
+
+MAYBE when the headline is vague or generic ("Engineer at X", "Software
+Engineer") and the area cannot be told from the card. These are worth opening
+only when nothing better is on the page: a small-company "Electronics Engineer"
+is often exactly the right person, and the card cannot tell you.
+
+Score 0-100 for how worth opening they are. Be decisive: most cards on a page
+are not worth a message, and saying so saves the candidate more time than a
+generous score does.
+
+Return JSON: {"results": [{"i": <index as given>, "verdict": "draft"|"maybe"|"skip",
+"score": <int>, "reason": "<one short sentence, concrete, naming what in the card
+decided it>", "area": "<one of AREAS or other>"}]}
+
+One entry per person, same indexes, no extras. AREAS: """ + ", ".join(AREAS) + "."
+
+
+def people_to_prompt(fork: str, people: list[dict]) -> str:
+    lines = []
+    if fork.strip():
+        lines.append(f"The candidate's current fork:\n{fork.strip()}\n")
+    lines.append("Search result cards:")
+    for i, p in enumerate(people):
+        bits = [f"[{i}] {p.get('name') or '(no name)'}"]
+        for key in ("headline", "location", "snippet", "degree"):
+            v = (p.get(key) or "").strip()
+            if v:
+                bits.append(f"    {key}: {v[:300]}")
+        if p.get("open_to_work"):
+            bits.append("    badge: OPEN TO WORK")
+        lines.append("\n".join(bits))
+    return "\n".join(lines)
+
+
+def triage_people(cv_text: str, fork: str, people: list[dict]) -> list[dict]:
+    """One model call for the whole page, not one per person.
+
+    Uses MODEL (flash-lite by default) rather than OUTREACH_MODEL: this is a
+    coarse sort, and the drafting model's daily quota is the scarce one.
+    """
+    config = genai_types.GenerateContentConfig(
+        system_instruction=f"{TRIAGE_INSTRUCTIONS}\n\nCANDIDATE CV:\n\n{cv_text}",
+        response_mime_type="application/json",
+        max_output_tokens=4000,
+        temperature=0.2,
+        thinking_config=genai_types.ThinkingConfig(thinking_budget=0),
+    )
+    last_err = None
+    for attempt in range(3):
+        try:
+            resp = client.models.generate_content(
+                model=MODEL,
+                contents=people_to_prompt(fork, people),
+                config=config,
+            )
+            data = extract_json(resp.text or "")
+            rows = (data or {}).get("results")
+            if not isinstance(rows, list):
+                raise ValueError("model did not return a results list")
+            break
+        except Exception as e:
+            last_err = e
+            if any(t in str(e).lower() for t in ("429", "503", "rate", "quota", "unavailable")):
+                time.sleep(2 ** attempt * 2)
+                continue
+            raise
+    else:
+        raise RuntimeError(f"Triage failed: {last_err}")
+
+    by_index = {}
+    for r in rows:
+        try:
+            i = int(r.get("i"))
+        except (TypeError, ValueError):
+            continue
+        if not 0 <= i < len(people):
+            continue
+        verdict = str(r.get("verdict") or "maybe").lower()
+        if verdict not in ("draft", "maybe", "skip"):
+            verdict = "maybe"
+        area = r.get("area") if r.get("area") in AREAS else "other"
+        try:
+            score = max(0, min(100, int(r.get("score", 0))))
+        except (TypeError, ValueError):
+            score = 0
+        by_index[i] = {"verdict": verdict, "score": score, "area": area,
+                       "reason": str(r.get("reason") or "").strip()}
+
+    # A card the model skipped entirely is a "maybe", not a silent disappearance.
+    out = []
+    for i, p in enumerate(people):
+        row = by_index.get(i) or {
+            "verdict": "maybe", "score": 0, "area": "other",
+            "reason": "the model did not rate this card",
+        }
+        out.append({**p, **row})
+    return out
+
+
+@app.post("/triage")
+def triage():
+    body = request.get_json(silent=True) or {}
+    cv = (body.get("cv") or "").strip()
+    fork = body.get("fork") or ""
+    people = body.get("people") or []
+    if not cv:
+        return jsonify(error="Missing 'cv' in body."), 400
+    if not isinstance(people, list) or not people:
+        return jsonify(error="Body 'people' must be a non-empty list."), 400
+    if len(people) > 40:
+        people = people[:40]
+    if not client:
+        return jsonify(error="GOOGLE_API_KEY not configured on the helper."), 500
+    print(f"[triage] {len(people)} cards, model={MODEL}")
+    try:
+        results = triage_people(cv, fork, people)
+    except Exception as e:
+        return jsonify(error=str(e)), 502
+    counts = {}
+    for r in results:
+        counts[r["verdict"]] = counts.get(r["verdict"], 0) + 1
+    print(f"[triage] -> {counts}")
+    return jsonify(results=results)
+
+
 @app.get("/outreach/coverage")
 def outreach_coverage():
     rows = outreach_rows()

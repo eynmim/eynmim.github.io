@@ -5,45 +5,12 @@
 // jsdom has no innerText, so the harness shims one that breaks on block
 // elements. That is only needed here; browsers provide the real thing.
 
-const fs = require("fs");
-const path = require("path");
-const { JSDOM } = require("jsdom");
-
-const ADAPTER = path.join(__dirname, "..", "extension", "adapters", "linkedin-profile.js");
-let pass = 0, fail = 0;
-const ok = (c, m) => { if (c) { pass++; console.log("  ok   " + m); } else { fail++; console.log("  FAIL " + m); } };
-
-const BLOCK = new Set(["DIV", "SECTION", "MAIN", "P", "LI", "UL", "OL", "H1", "H2", "H3", "H4", "HEADER", "FOOTER", "ARTICLE"]);
-
-function shimInnerText(window) {
-  Object.defineProperty(window.HTMLElement.prototype, "innerText", {
-    configurable: true,
-    get() {
-      const walk = (node) => {
-        let out = "";
-        for (const child of node.childNodes) {
-          if (child.nodeType === 3) out += child.textContent;
-          else if (child.nodeType === 1) {
-            const block = BLOCK.has(child.tagName);
-            if (block && out && !out.endsWith("\n")) out += "\n";
-            out += walk(child);
-            if (block && !out.endsWith("\n")) out += "\n";
-          }
-        }
-        return out;
-      };
-      return walk(this).replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n");
-    },
-  });
-}
+const { runAdapter, reporter } = require("./dom-helpers");
+const { ok, done } = reporter();
 
 function run(html, url) {
-  const dom = new JSDOM(html, { url, runScripts: "outside-only" });
-  shimInnerText(dom.window);
-  const src = fs.readFileSync(ADAPTER, "utf8");
-  dom.window.eval(src);
-  const api = dom.window.__JOBMATCH_PROFILE_ADAPTER;
-  return { profile: api.collectProfile(), probe: api.probeDom(), window: dom.window };
+  const { window, api } = runAdapter("linkedin-profile.js", html, url, "__JOBMATCH_PROFILE_ADAPTER");
+  return { profile: api.collectProfile(), probe: api.probeDom(), window };
 }
 
 // ---------- the DOM the adapter was originally written for ----------
@@ -153,6 +120,5 @@ const NEW_DOM = `
     ok(!!res.profile.name.trim(), `name is non-empty on the ${label} DOM`);
   }
 
-  console.log(`\n${pass} passed, ${fail} failed`);
-  process.exit(fail ? 1 : 0);
+  done();
 })();

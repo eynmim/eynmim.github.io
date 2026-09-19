@@ -33,6 +33,8 @@ Typical tasks and where to look:
 | a Boolean search string is wrong or missing | `extension/search.js` **and** `TITLES.md` — same data in two places, change both |
 | coverage / daily counter is wrong | `helper/server.py → /outreach/coverage` |
 | batch run misbehaves (stops early, skips a tab) | `extension/batch.js` |
+| results ranking calls the wrong people worth opening | `helper/server.py → TRIAGE_INSTRUCTIONS` |
+| result cards come back blank or duplicated | `extension/adapters/linkedin-people.js` |
 
 Verify helper changes with a synthetic profile against `POST /outreach`
 (see README §H), never against a real person's data.

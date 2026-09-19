@@ -32,6 +32,10 @@
       <button id="draft-btn">Draft message</button>
       <button id="diag-btn" class="secondary">Check DOM</button>
     </div>
+    <div id="people-row" hidden>
+      <button id="triage-btn">Rank these results</button>
+      <span class="note">reads the cards on screen, opens nothing</span>
+    </div>
     <div id="progress" hidden></div>
     <div id="error" class="error" hidden></div>
     <div id="due" class="due" hidden></div>
@@ -42,6 +46,14 @@
       </div>
       <pre id="diag-body"></pre>
     </div>
+  </section>
+
+  <section id="triage" hidden>
+    <div class="controls">
+      <label><input type="checkbox" id="hide-skip" checked /> hide the skips</label>
+      <span id="triage-summary"></span>
+    </div>
+    <ul id="people-list"></ul>
   </section>
 
   <section id="outreach" hidden>

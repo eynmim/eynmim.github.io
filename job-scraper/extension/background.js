@@ -12,6 +12,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       .catch((err) => sendResponse({ ok: false, error: err.message || String(err) }));
     return true;
   }
+  if (msg?.type === "triagePeople") {
+    triagePeople(msg.tabId)
+      .then((data) => sendResponse({ ok: true, ...data }))
+      .catch((err) => sendResponse({ ok: false, error: err.message || String(err) }));
+    return true;
+  }
   if (msg?.type === "diagnoseProfile") {
     readProfile(msg.tabId, true)
       .then((data) => sendResponse({ ok: true, ...data }))
@@ -139,6 +145,54 @@ async function readProfile(tabId, withProbe) {
     throw new Error("Could not read a profile from this page. Open a linkedin.com/in/<name> page and scroll once so it loads.");
   }
   return withProbe ? { profile, probe: scrape.probe } : profile;
+}
+
+// Read the search results already on screen and have the helper sort them.
+// No profile is opened and nothing is clicked: this is the step that decides
+// which profiles are worth opening by hand.
+async function triagePeople(tabId) {
+  await chrome.scripting.executeScript({
+    target: { tabId, allFrames: false },
+    files: ["adapters/linkedin-people.js"],
+  });
+  const [{ result: scrape }] = await chrome.scripting.executeScript({
+    target: { tabId, allFrames: false },
+    func: () => {
+      const a = window.__JOBMATCH_PEOPLE_ADAPTER;
+      if (!a) return { error: "People adapter did not load." };
+      try {
+        return { people: a.collectPeople() };
+      } catch (e) {
+        return { error: e.message || String(e) };
+      }
+    },
+  });
+  if (scrape?.error) throw new Error(`Scrape failed: ${scrape.error}`);
+  const people = scrape?.people || [];
+  if (!people.length) {
+    throw new Error(
+      "No result cards on this page. Open a linkedin.com/search/results/people/ page and let it load."
+    );
+  }
+
+  const { helperUrl, helperBase, cvText } = await loadHelperAndCv();
+  const { careerFork = "" } = await chrome.storage.local.get(["careerFork"]);
+
+  const resp = await fetch(`${helperBase}/triage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ cv: cvText, fork: careerFork, people }),
+  }).catch((e) => {
+    throw new Error(
+      `Helper unreachable at ${helperUrl}. Is it running? (python helper/server.py)\n${e.message}`
+    );
+  });
+  if (!resp.ok) {
+    const t = await resp.text();
+    throw new Error(`Helper error ${resp.status}: ${t.slice(0, 300)}`);
+  }
+  const data = await resp.json();
+  return { results: data.results || [] };
 }
 
 async function draftOutreach(tabId, mentorType) {

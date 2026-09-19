@@ -133,6 +133,18 @@ school, connection degree. Your own market is the one that answers — same time
 20-minute call, PoliTo in common, companies you could actually join. Somewhere far away
 is a question for after the sixteen conversations, not before.
 
+**Rank these results** appears in the popup on any `/search/results/people/` page. It
+reads the cards already on screen and sorts them: *draft* for someone worth opening,
+*skip* with a reason, *maybe* when the card is too thin to tell. Skips are hidden until
+you ask for them. One model call for the whole page, on the cheaper `MODEL` rather than
+`OUTREACH_MODEL`, so a page costs about as much as a fifteenth of the daily draft budget.
+
+It opens nothing and clicks nothing — it reads a page you opened yourself, the same way
+the job scanner does. And it is a filter, not a verdict: a search card has a headline and
+a location and little else, so *maybe* really does mean *look yourself*. A small-company
+"Electronics Engineer" who does the board, the firmware and the EMC test looks identical
+on a card to one who does none of it.
+
 **Batch** takes the `linkedin.com/in/` tabs you already have open and drafts them one after
 another, so the model's 5-15 seconds stop being your waiting time. Middle-click a handful
 of search results, scroll each tab once so Experience loads, then open Batch, untick anyone
@@ -295,6 +307,11 @@ CORS is limited to `chrome-extension://` origins because `/cv`, `/outreach/due` 
 `/outreach/coverage` expose personal data. Env: `OUTREACH_MODEL`, `FOLLOWUP_DAYS`,
 `OUTREACH_CSV`, `AREA_TARGET`.
 
+`POST /triage` takes the CV, the fork and a page of search cards and returns a verdict,
+score, reason and area per card — one call, `MODEL`, prompt in `TRIAGE_INSTRUCTIONS`.
+Cards the model fails to rate come back as `maybe` rather than vanishing, and an index it
+invents is dropped. The page side is `extension/adapters/linkedin-people.js`.
+
 `GET /outreach/coverage` counts the tracker by area (`contacted`, `replied`) plus
 `sent_today`, and is what the Search and Batch pages show. It reads the same CSV; no new
 state. The search strings live in `extension/search.js` as data copied from TITLES.md —
@@ -418,6 +435,7 @@ job-scraper/
 │   └── adapters/
 │       ├── careerdays.js
 │       ├── linkedin.js            # stub (jobs)
+│       ├── linkedin-people.js     # search results, for Rank these results
 │       ├── linkedin-profile.js    # MentorMatch: one person
 │       └── generic.js             # fallback
 ├── test/                          # headless checks, no browser and no API calls
