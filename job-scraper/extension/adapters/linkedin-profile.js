@@ -28,6 +28,32 @@
       .filter(Boolean);
   }
 
+  // The top card renders inline, so innerText runs name, connection degree and
+  // headline together on one line. The DOM still keeps them as separate text
+  // nodes, and node order survives LinkedIn's class renames.
+  function textParts(root) {
+    if (!root) return [];
+    const out = [];
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      if (n.parentElement?.closest(".visually-hidden")) continue;
+      const t = (n.nodeValue || "").replace(/\s+/g, " ").replace(/^[·•|\s]+/, "").trim();
+      if (t) out.push(t);
+    }
+    return out;
+  }
+
+  // Connection degrees, counts and the action buttons that sit between the
+  // name and the headline.
+  function isChrome(t) {
+    return (
+      t.length < 3 ||
+      /^\d+(st|nd|rd|th)\+?$/i.test(t) ||
+      /^[\d,.]+\s*(followers?|connections?|mutual)/i.test(t) ||
+      /^(message|follow|following|connect|more|contact info|save to pdf|show all|pending|open to|add profile section|enhance profile)/i.test(t)
+    );
+  }
+
   function section(anchorId, headingRe) {
     // Preferred: each profile card carries an empty anchor <div id="experience">.
     const anchor = document.getElementById(anchorId);
@@ -116,14 +142,15 @@
       main.querySelector(".text-body-small.inline.t-black--light.break-words, span.text-body-small.inline")
     );
 
-    // Fall back to the top card's own line order: name, headline, location.
+    // Fall back to the top card's text-node order: name, headline, location.
     if (!headline || !location) {
-      const rest = lines(topCard).filter((l) => {
-        const bare = l.split("·")[0].trim();
-        return bare && bare !== name && !/^\d/.test(l) && !/followers|connections|Show all|Message|Follow|More/i.test(l);
-      });
+      const parts = textParts(topCard).filter((t) => !isChrome(t));
+      const at = parts.findIndex((t) => t === name || t.startsWith(name));
+      const rest = parts.slice(at >= 0 ? at + 1 : 0).filter((t) => t !== name);
       if (!headline) headline = rest[0] || "";
-      if (!location) location = rest.find((l) => l !== headline && l.length < 80) || "";
+      if (!location) {
+        location = rest.slice(1).find((t) => t !== headline && t.length <= 90) || "";
+      }
     }
 
     const aboutSec = section("about", /^about$/i);
@@ -172,7 +199,11 @@
         experience: !!document.getElementById("experience"),
         education: !!document.getElementById("education"),
       },
-      topCardLines: lines(topCard).slice(0, 8).map((l) => l.slice(0, 60)),
+      topCardLines: lines(topCard).slice(0, 4).map((l) => l.slice(0, 60)),
+      topCardParts: textParts(topCard)
+        .filter((t) => !isChrome(t))
+        .slice(0, 10)
+        .map((t) => t.slice(0, 60)),
       experienceCard: describe(sec("experience", /^experience$/i)),
       educationCard: describe(sec("education", /^education$/i)),
       oldSelectors: {

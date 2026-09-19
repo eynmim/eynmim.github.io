@@ -372,8 +372,8 @@ function diagReport(profile, probe) {
   lines.push(`  old classes  headline ${o.headline ? "match" : "GONE"}  location ${o.location ? "match" : "GONE"}`);
   lines.push(`  experience   ${probe.experienceCard}`);
   lines.push(`  education    ${probe.educationCard}`);
-  lines.push("  top card lines:");
-  for (const l of probe.topCardLines || []) lines.push(`    | ${l}`);
+  lines.push("  top card text nodes:");
+  for (const t of probe.topCardParts || []) lines.push(`    | ${t}`);
   return lines.join("\n");
 }
 

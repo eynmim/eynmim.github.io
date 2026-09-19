@@ -68,28 +68,32 @@ const OLD_DOM = `
 </main>`;
 
 // ---------- the shape the real page moved to ----------
-// No <h1>, old class names gone, entries are <div>s. Matches the Check DOM
-// report from a live profile: only about and raw came back filled.
+// Reconstructed from a live Check DOM report: no <h1>, no anchor ids, old
+// class names gone, the whole top card rendered inline so innerText returns a
+// single run-together line, experience still in <li> but education not.
 const NEW_DOM = `
 <title>(3) Callum Allen | LinkedIn</title>
 <main>
   <section>
-    <div><span>Callum Allen</span><span>· 1st</span></div>
-    <div>Embedded Software Recruitment Specialist</div>
-    <div>Manchester, England, United Kingdom</div>
-    <div>4,512 followers</div>
-    <div>Message</div>
+    <div><span>Callum Allen</span><span>·&nbsp;</span><span>1st</span><span>·&nbsp;</span><span>2nd</span><span>Embedded Software Recruitment | Assisting engineers across the UK</span><span>Manchester, England, United Kingdom</span><span>Contact info</span><span>4,512 followers</span></div>
+    <div><button>Message</button><button>More</button></div>
   </section>
-  <section><div id="about"></div><h2>About</h2><p>With 65+ personal recommendations from Embedded engineers.</p></section>
-  <section><div id="experience"></div><h2>Experience</h2>
+  <section><h2>About</h2><p>With 65+ personal recommendations from Embedded engineers.</p></section>
+  <section><h2>Experience</h2>
+    <ul>
+      <li>Team Principal - Embedded Software, IC Resources, Jan 2026 - Present</li>
+      <li>Principal Consultant, IC Resources, Jan 2021 - Dec 2025</li>
+      <li>Senior Consultant, IC Resources, 2019 - 2021</li>
+      <li>Consultant, Redline Group, 2018 - 2019</li>
+      <li>Trainee, Redline Group, 2017 - 2018</li>
+    </ul>
+  </section>
+  <section><h2>Education</h2>
     <div>
-      <div>Principal Consultant at IC Resources, Jan 2021 - Present, Manchester</div>
-      <div>Recruitment Consultant at Redline Group, 2018 - 2021, Hertfordshire</div>
+      <div>Key Training, Level 3 NVQ, Team Leadership, 2018 - 2019</div>
+      <div>Ashton Sixth Form College, A Levels, 2014 - 2016</div>
     </div>
-    <div>Show all 4 experiences</div>
-  </section>
-  <section><div id="education"></div><h2>Education</h2>
-    <div><div>University of Manchester, BA Economics, 2014 - 2017</div></div>
+    <div>Show all 3 educations</div>
   </section>
 </main>`;
 
@@ -109,17 +113,31 @@ const NEW_DOM = `
   const b = run(NEW_DOM, "https://www.linkedin.com/in/callum-allen-44-/");
   ok(b.probe.h1Count === 0, "there is no h1 at all on this page");
   ok(b.probe.oldSelectors.headline === false, "probe reports the old headline class gone");
-  ok(b.profile.name === "Callum Allen", `name recovered anyway (${b.profile.name})`);
-  ok(!b.profile.name.includes("(3)"), "  the unread-count prefix is stripped from the title");
+  ok(Object.values(b.probe.anchors).every((v) => v === false), "the anchor ids are gone too");
+  // The condition the text-node fallback exists for: innerText glues the name,
+  // the degree badge and the headline into a single line, so splitting on
+  // newlines cannot separate them.
+  ok(
+    b.probe.topCardLines.some((l) => l.includes("Callum Allen") && /Embedded Software/.test(l)),
+    "innerText runs the name and the headline together on one line"
+  );
+  ok(b.probe.topCardParts[0] === "Callum Allen", "but the text nodes keep them apart");
+  ok(/^Embedded Software/.test(b.probe.topCardParts[1]), "  headline is the next node after the name");
+
+  ok(b.profile.name === "Callum Allen", `name recovered from the tab title (${b.profile.name})`);
+  ok(!b.profile.name.includes("(3)"), "  the unread-count prefix is stripped");
   ok(!b.profile.name.includes("LinkedIn"), "  and the ' | LinkedIn' suffix");
-  ok(/Embedded Software Recruitment/.test(b.profile.headline), `headline from the top card (${b.profile.headline})`);
-  ok(/Manchester/.test(b.profile.location), `location from the top card (${b.profile.location})`);
-  ok(!/followers/.test(b.profile.headline + b.profile.location), "follower counts kept out of both");
-  ok(/65\+ personal recommendations/.test(b.profile.about), "about still read from the anchor");
-  ok(b.profile.experience.length === 2, `roles found with no <li> present (${b.profile.experience.length})`);
-  ok(/IC Resources/.test(b.profile.experience[0]), "  first role is the real one");
-  ok(!b.profile.experience.some((e) => /^Show all/i.test(e)), "  the 'Show all' footer is not an entry");
-  ok(b.profile.education.length === 1, "education found the same way");
+  ok(/^Embedded Software Recruitment/.test(b.profile.headline), `headline from the text nodes (${b.profile.headline})`);
+  ok(b.profile.location === "Manchester, England, United Kingdom", `location too (${b.profile.location})`);
+  const both = b.profile.headline + " " + b.profile.location;
+  ok(!/followers/.test(both), "  follower counts kept out");
+  ok(!/Contact info|Message|More/.test(both), "  so are the action buttons");
+  ok(!/\b(1st|2nd|3rd)\b/.test(both), "  and the connection degree badges");
+  ok(/65\+ personal recommendations/.test(b.profile.about), "about found by heading text, with no anchor");
+  ok(b.profile.experience.length === 5, `all five roles (${b.profile.experience.length})`);
+  ok(/Team Principal/.test(b.profile.experience[0]), "  newest role first");
+  ok(b.profile.education.length === 2, `education found with no <li> present (${b.profile.education.length})`);
+  ok(!b.profile.education.some((e) => /^Show all/i.test(e)), "  the 'Show all' footer is not an entry");
   ok(b.profile.raw.includes("Callum Allen"), "raw still carries the page as the last-resort fallback");
 
   console.log("\nthe field the tracker depends on");
