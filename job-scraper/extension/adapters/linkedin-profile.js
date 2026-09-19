@@ -50,8 +50,17 @@
       t.length < 3 ||
       /^\d+(st|nd|rd|th)\+?$/i.test(t) ||
       /^[\d,.]+\s*(followers?|connections?|mutual)/i.test(t) ||
-      /^(message|follow|following|connect|more|contact info|save to pdf|show all|pending|open to|add profile section|enhance profile)/i.test(t)
+      /^and \d+ other/i.test(t) ||
+      /mutual connections?$/i.test(t) ||
+      /^(visit my|message|follow|following|connect|more|contact info|save to pdf|show all|pending|open to|add profile section|enhance profile)/i.test(t)
     );
+  }
+
+  // "Bracknell, England, United Kingdom" rather than "IC Resources": the top
+  // card puts the current employer between the headline and the location, and
+  // only one of the two is written like a place.
+  function looksLikePlace(t) {
+    return /^[^,]{2,60}(,\s*[^,]{2,60}){1,3}$/.test(t) && !/\d/.test(t);
   }
 
   function section(anchorId, headingRe) {
@@ -149,7 +158,8 @@
       const rest = parts.slice(at >= 0 ? at + 1 : 0).filter((t) => t !== name);
       if (!headline) headline = rest[0] || "";
       if (!location) {
-        location = rest.slice(1).find((t) => t !== headline && t.length <= 90) || "";
+        const after = rest.slice(1).filter((t) => t !== headline);
+        location = after.find(looksLikePlace) || after.find((t) => t.length <= 90) || "";
       }
     }
 

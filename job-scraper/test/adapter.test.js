@@ -75,7 +75,8 @@ const NEW_DOM = `
 <title>(3) Callum Allen | LinkedIn</title>
 <main>
   <section>
-    <div><span>Callum Allen</span><span>·&nbsp;</span><span>1st</span><span>·&nbsp;</span><span>2nd</span><span>Embedded Software Recruitment | Assisting engineers across the UK</span><span>Manchester, England, United Kingdom</span><span>Contact info</span><span>4,512 followers</span></div>
+    <div><span>Callum Allen</span><span>·&nbsp;</span><span>1st</span><span>·&nbsp;</span><span>2nd</span><span>Embedded Software Recruitment | Assisting Embedded Software engineers across the UK</span><span>IC Resources</span><span>Bracknell, England, United Kingdom</span><span>Contact info</span><span>4,512 followers</span></div>
+    <div><span>IC Resources</span><span>Antonio</span><span>Ali</span><span>and 2 other mutual connections</span><span>Visit my website</span></div>
     <div><button>Message</button><button>More</button></div>
   </section>
   <section><h2>About</h2><p>With 65+ personal recommendations from Embedded engineers.</p></section>
@@ -128,11 +129,16 @@ const NEW_DOM = `
   ok(!b.profile.name.includes("(3)"), "  the unread-count prefix is stripped");
   ok(!b.profile.name.includes("LinkedIn"), "  and the ' | LinkedIn' suffix");
   ok(/^Embedded Software Recruitment/.test(b.profile.headline), `headline from the text nodes (${b.profile.headline})`);
-  ok(b.profile.location === "Manchester, England, United Kingdom", `location too (${b.profile.location})`);
+  // The current employer sits between the headline and the location in the
+  // node order, so "first thing after the headline" picks the company.
+  ok(b.profile.location === "Bracknell, England, United Kingdom", `location is the place (${b.profile.location})`);
+  ok(b.profile.location !== "IC Resources", "  not the employer that precedes it");
   const both = b.profile.headline + " " + b.profile.location;
   ok(!/followers/.test(both), "  follower counts kept out");
   ok(!/Contact info|Message|More/.test(both), "  so are the action buttons");
   ok(!/\b(1st|2nd|3rd)\b/.test(both), "  and the connection degree badges");
+  ok(!/mutual connections|Visit my website/.test(b.probe.topCardParts.join(" ")),
+     "  mutual-connection and website rows are filtered before the fields are picked");
   ok(/65\+ personal recommendations/.test(b.profile.about), "about found by heading text, with no anchor");
   ok(b.profile.experience.length === 5, `all five roles (${b.profile.experience.length})`);
   ok(/Team Principal/.test(b.profile.experience[0]), "  newest role first");
