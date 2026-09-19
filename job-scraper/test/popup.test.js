@@ -13,7 +13,7 @@ let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; console.log("  ok   " + m); } else { fail++; console.log("  FAIL " + m); } };
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
-async function openPopup(tabUrl) {
+async function openPopup(tabUrl, sendOverride) {
   const dom = new JSDOM(fs.readFileSync(path.join(EXT, "popup.html"), "utf8"), { runScripts: "outside-only" });
   const { window } = dom;
   const style = window.document.createElement("style");
@@ -38,9 +38,11 @@ async function openPopup(tabUrl) {
     tabs: { query: async () => [{ id: 1, url: tabUrl }], create: (o) => opened.push(o.url) },
     runtime: {
       sendMessage: async (msg) =>
-        msg?.type === "diagnoseProfile"
-          ? { ok: true, profile: BLANK_NAME_PROFILE }
-          : { ok: false, error: "not called" },
+        sendOverride
+          ? sendOverride(msg)
+          : msg?.type === "diagnoseProfile"
+            ? { ok: true, profile: BLANK_NAME_PROFILE }
+            : { ok: false, error: "not called" },
       openOptionsPage: () => opened.push("options"),
       getURL: (p) => `chrome-extension://testid/${p}`,
     },
@@ -90,6 +92,19 @@ async function openPopup(tabUrl) {
   prof.doc.getElementById("diag-copy").dispatchEvent(new prof.window.Event("click"));
   await tick();
   ok(prof.copied.length === 1 && prof.copied[0] === report, "Copy report puts the whole thing on the clipboard");
+
+  // A reload that updated the popup but left the old service worker running
+  // makes sendMessage resolve to undefined. That must read as an instruction,
+  // not as "unknown error".
+  console.log("\nstale service worker");
+  const stale = await openPopup("https://www.linkedin.com/in/someone/", async () => undefined);
+  stale.doc.getElementById("diag-btn").dispatchEvent(new stale.window.Event("click"));
+  await tick(); await tick();
+  const errText = stale.doc.getElementById("error").textContent;
+  ok(stale.shown("error"), "the error is shown");
+  ok(/service worker/.test(errText), "it names the service worker as the cause");
+  ok(/toggle JobMatch off and on/.test(errText), "and says exactly what to do");
+  ok(!/Unknown error/.test(errText), "no 'unknown error' left anywhere");
 
   console.log("\npopup header");
   const links = [...prof.doc.querySelectorAll("header nav a")].map((a) => a.textContent);

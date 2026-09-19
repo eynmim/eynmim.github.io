@@ -127,7 +127,14 @@ async function draftSelected() {
         tabId,
         mentorType: els.mentorType.value,
       });
-      if (!resp?.ok) throw new Error(resp?.error || "Unknown error from background.");
+      if (!resp?.ok) {
+        throw new Error(
+          resp?.error ||
+            "The background service worker did not answer. It is probably still running " +
+              "the previous version: toggle JobMatch off and on in the extensions page, " +
+              "then refresh these tabs."
+        );
+      }
       addCard(resp.profile, resp.draft);
       drafted += 1;
     } catch (e) {

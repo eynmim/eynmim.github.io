@@ -119,6 +119,18 @@ function adapterLabelForUrl(url) {
   }
 }
 
+// An undefined response means no listener matched: the service worker is
+// running older code than this popup, which is what a half-applied reload
+// looks like. Say that instead of "unknown error".
+function backgroundError(resp) {
+  if (resp?.error) return resp.error;
+  return (
+    "The background service worker did not answer. It is probably still running " +
+    "the previous version: open the extensions page, toggle JobMatch off and on, " +
+    "then refresh this tab."
+  );
+}
+
 function setError(msg) {
   if (!msg) {
     els.error.hidden = true;
@@ -156,7 +168,7 @@ async function onScan() {
       url: tab.url,
     });
 
-    if (!resp?.ok) throw new Error(resp?.error || "Unknown error from background.");
+    if (!resp?.ok) throw new Error(backgroundError(resp));
 
     lastResults = resp.results || [];
     setProgress(`Got ${lastResults.length} jobs.`);
@@ -281,7 +293,7 @@ async function onDraft() {
       tabId: tab.id,
       mentorType: els.mentorType.value,
     });
-    if (!resp?.ok) throw new Error(resp?.error || "Unknown error from background.");
+    if (!resp?.ok) throw new Error(backgroundError(resp));
     lastOutreach = { profile: resp.profile, draft: resp.draft };
     renderOutreach();
     setProgress("");
@@ -324,7 +336,7 @@ async function onDiagnose() {
     const tab = await getActiveTab();
     if (!tab?.id) throw new Error("No active tab.");
     const resp = await chrome.runtime.sendMessage({ type: "diagnoseProfile", tabId: tab.id });
-    if (!resp?.ok) throw new Error(resp?.error || "Unknown error from background.");
+    if (!resp?.ok) throw new Error(backgroundError(resp));
     lastDiag = diagReport(resp.profile);
     els.diagBody.textContent = lastDiag;
     els.diag.hidden = false;
