@@ -416,6 +416,10 @@ def profile_to_prompt(profile: dict, fork: str, mentor_type: str) -> str:
     for label, key in (
         ("Name", "name"),
         ("Headline", "headline"),
+        # Straight off the top card, so it is there even when the Experience
+        # section came back thin — which is when it matters most.
+        ("Current employer", "company"),
+        ("School", "school"),
         ("Location", "location"),
         ("URL", "url"),
         ("About", "about"),
@@ -610,7 +614,8 @@ def outreach():
         model=OUTREACH_MODEL,
         forced_type=mentor_type,
         profile={k: trim(profile.get(k), 200) for k in
-                 ("name", "headline", "location", "url", "experience", "education")},
+                 ("name", "headline", "company", "school", "location", "url",
+                  "experience", "education")},
         profile_raw_chars=len(profile.get("raw") or ""),
         # The model is given `raw` as well as the structured fields, so without
         # it here there is no way to tell an invented fact from one that was

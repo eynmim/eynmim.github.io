@@ -158,16 +158,25 @@
       main.querySelector(".text-body-small.inline.t-black--light.break-words, span.text-body-small.inline")
     );
 
-    // Fall back to the top card's text-node order: name, headline, location.
-    if (!headline || !location) {
+    // The top card's text-node order is name, headline, employer · school,
+    // location. The employer line is worth having on its own: the Experience
+    // card is often thin or half lazy-loaded, and a current job that appears
+    // nowhere else is still named here.
+    let company = "";
+    let school = "";
+    {
       const parts = textParts(topCard).filter((t) => !isChrome(t));
       const at = parts.findIndex((t) => t === name || t.startsWith(name));
       const rest = parts.slice(at >= 0 ? at + 1 : 0).filter((t) => t !== name);
       if (!headline) headline = rest[0] || "";
+      const after = rest.filter((t) => t !== headline);
       if (!location) {
-        const after = rest.slice(1).filter((t) => t !== headline);
         location = after.find(looksLikePlace) || after.find((t) => t.length <= 90) || "";
       }
+      const employerLine = after.find((t) => t !== location && !looksLikePlace(t)) || "";
+      const [first, second] = employerLine.split("·").map((s) => s.trim());
+      company = first || "";
+      school = second || "";
     }
 
     const aboutSec = section("about", /^about$/i);
@@ -182,6 +191,8 @@
     const profile = {
       name,
       headline,
+      company,
+      school,
       location,
       about,
       experience,

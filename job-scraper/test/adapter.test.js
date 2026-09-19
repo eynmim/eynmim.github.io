@@ -115,6 +115,29 @@ const NEW_DOM = `
 
   // A live run read "During the project, I was also able to work with my
   // brother" as the location: one comma, no digits, so the old rule accepted it.
+  // A live profile whose Experience card held two roles, both ended years ago,
+  // while the current employer sat in the top card and was being discarded.
+  console.log("\nthe current employer, when Experience does not have it");
+  const EMPLOYER_ONLY_IN_TOP_CARD = `
+<title>Andrea Brugiafreddo | LinkedIn</title>
+<main>
+  <section>
+    <div><span>Andrea Brugiafreddo</span><span>·&nbsp;</span><span>1st</span><span>Electronic Hardware Engineer</span><span>ARGOTEC · Politecnico di Torino</span><span>Turin, Piedmont, Italy</span><span>500+</span></div>
+  </section>
+  <section><h2>About</h2><p>I like new experiences.</p></section>
+  <section><h2>Experience</h2>
+    <ul><li>Electronic Engineer - R&amp;D, Apr 2022 - Jan 2023 · 10 mos</li></ul>
+  </section>
+</main>`;
+  const e = run(EMPLOYER_ONLY_IN_TOP_CARD, "https://www.linkedin.com/in/andrea-b/");
+  ok(e.profile.company === "ARGOTEC", `current employer captured (${e.profile.company})`);
+  ok(e.profile.school === "Politecnico di Torino", `school too (${e.profile.school})`);
+  ok(e.profile.location === "Turin, Piedmont, Italy", `location still right (${e.profile.location})`);
+  ok(e.profile.headline === "Electronic Hardware Engineer", "headline still right");
+  ok(!/ARGOTEC/.test(e.profile.location), "the employer line is not mistaken for a location");
+  ok(!e.profile.experience.some((x) => /ARGOTEC/.test(x)),
+     "  and Experience genuinely does not contain it, which is the point");
+
   console.log("\na sentence is not a location");
   const PROSE_IN_TOP_CARD = `
 <title>Silas Perry | LinkedIn</title>

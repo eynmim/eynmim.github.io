@@ -453,7 +453,10 @@ function renderTriage() {
 
 // LinkedIn changes its DOM often enough that "which field came back empty"
 // needs to be a one-click answer. No helper call, no model call, no quota.
-const DIAG_FIELDS = ["name", "headline", "location", "about", "experience", "education", "raw"];
+const DIAG_FIELDS = [
+  "name", "headline", "company", "school", "location", "about",
+  "experience", "education", "raw",
+];
 
 async function onDiagnose() {
   setError("");
