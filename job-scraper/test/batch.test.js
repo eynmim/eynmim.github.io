@@ -21,6 +21,9 @@ const draftFor = (n) => ({
 async function openPage(tabs, sendMessage, logged) {
   const dom = new JSDOM(fs.readFileSync(path.join(EXT, "batch.html"), "utf8"), { runScripts: "outside-only" });
   const { window } = dom;
+  // Let jsdom's own DOMContentLoaded pass before the script is evaluated, so
+  // its listeners are registered once rather than twice.
+  await wait(0);
   const opened = [];
   window.chrome = {
     storage: { local: { get: async () => ({ helperUrl: "http://127.0.0.1:5577" }) } },

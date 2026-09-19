@@ -21,6 +21,10 @@ const SERVER_AREAS = [
 (async () => {
   const dom = new JSDOM(fs.readFileSync(path.join(EXT, "search.html"), "utf8"), { runScripts: "outside-only" });
   const { window } = dom;
+  // jsdom fires its own DOMContentLoaded just after construction. Let that pass
+  // before the script is evaluated, so the listeners below are registered once
+  // and a single click toggles once.
+  await tick();
   const opened = [];
   const copied = [];
 
@@ -106,7 +110,37 @@ const SERVER_AREAS = [
   toggle("polito", false); toggle("senior", false);
   await tick();
 
+  console.log("\nadding a location");
+  const geoAdd = doc.getElementById("geo-add");
+  ok(geoAdd.hidden === true, "the panel starts closed");
+  doc.getElementById("geo-add-toggle").dispatchEvent(new window.Event("click"));
+  ok(geoAdd.hidden === false, "Add a location opens it");
+  doc.getElementById("geo-add-toggle").dispatchEvent(new window.Event("click"));
+  ok(geoAdd.hidden === true, "  and closes it again");
+  doc.getElementById("geo-add-toggle").dispatchEvent(new window.Event("click"));
+
+  // Pressing Save with nothing pasted is the likely first attempt.
+  doc.getElementById("geo-label").value = "Turin";
+  doc.getElementById("geo-save").dispatchEvent(new window.Event("click"));
+  await tick();
+  const status = doc.getElementById("geo-status");
+  ok(status.className === "bad", "saving with an empty URL is reported as a failure");
+  ok(/Set the Location filter on LinkedIn first/.test(status.textContent),
+     `  and says what was missing (${status.textContent.slice(0, 40)}...)`);
+
+  doc.getElementById("geo-url").value =
+    'https://www.linkedin.com/search/results/people/?keywords=x&geoUrn=%5B%22103644278%22%5D';
+  doc.getElementById("geo-label").value = "Turin";
+  doc.getElementById("geo-save").dispatchEvent(new window.Event("click"));
+  await tick(); await tick();
+  ok(status.className !== "bad", "a real URL saves");
+  ok([...doc.getElementById("geo").options].some((o) => o.textContent === "Turin"),
+     "  the new location appears in the dropdown");
+  ok(doc.getElementById("geo").value === "103644278", "  and is selected straight away");
+  ok(doc.getElementById("geo-url").value === "", "  the input is cleared for the next one");
+
   console.log("\nlocation and connection degree ride along on every search");
+  doc.getElementById("geo").value = "103350119";
   ok(doc.getElementById("geo").value === "103350119", "the saved location is preselected");
   ok(doc.getElementById("network").value === "S", "2nd degree is the default");
   card("firmware-platform").querySelectorAll("button")[0].dispatchEvent(new window.Event("click"));

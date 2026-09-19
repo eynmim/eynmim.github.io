@@ -16,6 +16,9 @@ const tick = () => new Promise((r) => setTimeout(r, 0));
 async function openPopup(tabUrl, sendOverride) {
   const dom = new JSDOM(fs.readFileSync(path.join(EXT, "popup.html"), "utf8"), { runScripts: "outside-only" });
   const { window } = dom;
+  // Let jsdom's own DOMContentLoaded pass before the script is evaluated, so
+  // its listeners are registered once rather than twice.
+  await tick();
   const style = window.document.createElement("style");
   style.textContent = fs.readFileSync(path.join(EXT, "popup.css"), "utf8");
   window.document.head.appendChild(style);
