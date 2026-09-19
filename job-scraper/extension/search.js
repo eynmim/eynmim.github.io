@@ -138,10 +138,10 @@ const DAILY_CAP = 8; // README D: max 5-8 messages a day
 const els = {
   areas: document.getElementById("areas"),
   graph: document.getElementById("graph"),
-  polito: document.getElementById("polito"),
   senior: document.getElementById("senior"),
   quota: document.getElementById("quota"),
   geo: document.getElementById("geo"),
+  school: document.getElementById("school"),
   network: document.getElementById("network"),
   geoAddToggle: document.getElementById("geo-add-toggle"),
   geoAdd: document.getElementById("geo-add"),
@@ -152,44 +152,64 @@ const els = {
   geoStatus: document.getElementById("geo-status"),
 };
 
-// Locations are stored as LinkedIn's own geoUrn ids, copied out of a search
-// URL the user has already filtered. Guessing an id would filter silently to
-// the wrong country, so nothing is hardcoded.
+// Location and school are LinkedIn's own filters, stored as the ids copied out
+// of a search URL the user has already filtered. They are not keywords: a
+// keyword ANDs with the Boolean string and can empty a good search, which is
+// what putting "Politecnico di Torino" in the query used to do. Nothing is
+// hardcoded — a guessed id would filter silently to the wrong place.
 let savedGeos = [];
+let savedSchools = [];
 
-async function loadGeos() {
-  const { savedGeos: stored = [], lastGeo = "", lastNetwork = "S" } =
-    await chrome.storage.local.get(["savedGeos", "lastGeo", "lastNetwork"]);
-  savedGeos = stored;
-  renderGeos(lastGeo);
+async function loadFilters() {
+  const {
+    savedGeos: geos = [],
+    savedSchools: schools = [],
+    lastGeo = "",
+    lastSchool = "",
+    lastNetwork = "",
+  } = await chrome.storage.local.get([
+    "savedGeos", "savedSchools", "lastGeo", "lastSchool", "lastNetwork",
+  ]);
+  savedGeos = geos;
+  savedSchools = schools;
+  renderFilters(lastGeo, lastSchool);
   els.network.value = lastNetwork;
 }
 
-function renderGeos(selected) {
-  els.geo.innerHTML = "";
+function fillSelect(select, items, anyLabel, selected) {
+  select.innerHTML = "";
   const any = document.createElement("option");
   any.value = "";
-  any.textContent = "anywhere";
-  els.geo.appendChild(any);
-  for (const g of savedGeos) {
+  any.textContent = anyLabel;
+  select.appendChild(any);
+  for (const it of items) {
     const o = document.createElement("option");
-    o.value = g.urn;
-    o.textContent = g.label;
-    els.geo.appendChild(o);
+    o.value = it.id;
+    o.textContent = it.label;
+    select.appendChild(o);
   }
-  if (selected && savedGeos.some((g) => g.urn === selected)) els.geo.value = selected;
+  if (selected && items.some((it) => it.id === selected)) select.value = selected;
 }
 
-// LinkedIn writes it as geoUrn=["103350119"], percent-encoded.
-function geoUrnFromUrl(raw) {
+function renderFilters(geo, school) {
+  fillSelect(els.geo, savedGeos, "anywhere", geo);
+  fillSelect(els.school, savedSchools, "any", school);
+}
+
+// LinkedIn writes these as geoUrn=["103350119"] / schoolFilter=["12345"],
+// percent-encoded. Take whichever the pasted URL carries.
+function filterFromUrl(raw) {
   try {
     const u = new URL(raw.trim());
     if (!/linkedin\.com$/.test(u.hostname.replace(/^www\./, ""))) return null;
-    const v = u.searchParams.get("geoUrn");
-    if (!v) return null;
-    const ids = JSON.parse(v);
-    const id = Array.isArray(ids) ? ids[0] : ids;
-    return /^\d+$/.test(String(id)) ? String(id) : null;
+    for (const [param, kind] of [["geoUrn", "location"], ["schoolFilter", "school"]]) {
+      const v = u.searchParams.get(param);
+      if (!v) continue;
+      const ids = JSON.parse(v);
+      const id = String(Array.isArray(ids) ? ids[0] : ids);
+      if (/^\d+$/.test(id)) return { kind, id };
+    }
+    return null;
   } catch {
     return null;
   }
@@ -200,31 +220,47 @@ function setGeoStatus(msg, bad) {
   els.geoStatus.className = bad ? "bad" : "";
 }
 
-async function onSaveGeo() {
-  const urn = geoUrnFromUrl(els.geoUrl.value);
-  if (!urn) {
-    setGeoStatus("No geoUrn in that URL. Set the Location filter on LinkedIn first, then copy the address bar.", true);
+async function onSaveFilter() {
+  const found = filterFromUrl(els.geoUrl.value);
+  if (!found) {
+    setGeoStatus(
+      "No Location or School filter in that URL. Set one on LinkedIn first, then copy the address bar.",
+      true
+    );
     return;
   }
-  const label = els.geoLabel.value.trim() || `location ${urn}`;
-  savedGeos = [...savedGeos.filter((g) => g.urn !== urn), { label, urn }];
-  await chrome.storage.local.set({ savedGeos, lastGeo: urn });
-  renderGeos(urn);
+  const label = els.geoLabel.value.trim() || `${found.kind} ${found.id}`;
+  const entry = { label, id: found.id };
+  if (found.kind === "location") {
+    savedGeos = [...savedGeos.filter((g) => g.id !== found.id), entry];
+    await chrome.storage.local.set({ savedGeos, lastGeo: found.id });
+    renderFilters(found.id, els.school.value);
+  } else {
+    savedSchools = [...savedSchools.filter((s) => s.id !== found.id), entry];
+    await chrome.storage.local.set({ savedSchools, lastSchool: found.id });
+    renderFilters(els.geo.value, found.id);
+  }
   els.geoUrl.value = "";
   els.geoLabel.value = "";
-  setGeoStatus(`Saved ${label}. Every button now filters to it.`);
+  setGeoStatus(`Saved ${label} as a ${found.kind} filter. Every button uses it now.`);
 }
 
-async function onRemoveGeo() {
-  const urn = els.geo.value;
-  if (!urn) {
-    setGeoStatus("Pick a saved location first.", true);
+async function onRemoveFilter() {
+  if (els.geo.value) {
+    savedGeos = savedGeos.filter((g) => g.id !== els.geo.value);
+    await chrome.storage.local.set({ savedGeos, lastGeo: "" });
+    renderFilters("", els.school.value);
+    setGeoStatus("Location removed.");
     return;
   }
-  savedGeos = savedGeos.filter((g) => g.urn !== urn);
-  await chrome.storage.local.set({ savedGeos, lastGeo: "" });
-  renderGeos("");
-  setGeoStatus("Removed.");
+  if (els.school.value) {
+    savedSchools = savedSchools.filter((s) => s.id !== els.school.value);
+    await chrome.storage.local.set({ savedSchools, lastSchool: "" });
+    renderFilters(els.geo.value, "");
+    setGeoStatus("School removed.");
+    return;
+  }
+  setGeoStatus("Pick a saved filter first.", true);
 }
 
 async function helperBase() {
@@ -234,7 +270,6 @@ async function helperBase() {
 
 function buildKeywords(q) {
   const extra = [];
-  if (els.polito.checked) extra.push('"Politecnico di Torino"');
   if (els.senior.checked) extra.push('(senior OR staff OR principal OR lead OR "head of")');
   return [q, ...extra].join(" ");
 }
@@ -256,12 +291,17 @@ function openSearch(q, posts) {
   const kind = posts ? "content" : "people";
   const u = new URL(`https://www.linkedin.com/search/results/${kind}/`);
   u.searchParams.set("keywords", keywords);
-  // Location and connection degree only mean anything in a people search.
+  // These filters only mean anything in a people search.
   if (!posts) {
     if (els.geo.value) u.searchParams.set("geoUrn", JSON.stringify([els.geo.value]));
+    if (els.school.value) u.searchParams.set("schoolFilter", JSON.stringify([els.school.value]));
     if (els.network.value) u.searchParams.set("network", JSON.stringify([els.network.value]));
   }
-  chrome.storage.local.set({ lastGeo: els.geo.value, lastNetwork: els.network.value });
+  chrome.storage.local.set({
+    lastGeo: els.geo.value,
+    lastSchool: els.school.value,
+    lastNetwork: els.network.value,
+  });
   chrome.tabs.create({ url: u.toString() });
 }
 
@@ -378,19 +418,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   els.geoAddToggle.addEventListener("click", () => {
     els.geoAdd.hidden = !els.geoAdd.hidden;
   });
-  els.geoSave.addEventListener("click", onSaveGeo);
-  els.geoRemove.addEventListener("click", onRemoveGeo);
-  await loadGeos();
+  els.geoSave.addEventListener("click", onSaveFilter);
+  els.geoRemove.addEventListener("click", onRemoveFilter);
+  await loadFilters();
   renderGraph();
   renderAreas(null);
   const coverage = await loadCoverage();
   renderAreas(coverage);
   renderQuota(coverage);
-  // Re-label buttons when the toggles change the term count.
-  for (const t of [els.polito, els.senior]) {
-    t.addEventListener("change", () => {
-      renderAreas(coverage);
-      renderGraph();
-    });
-  }
+  // Re-label buttons when the toggle changes the term count.
+  els.senior.addEventListener("change", () => {
+    renderAreas(coverage);
+    renderGraph();
+  });
 });

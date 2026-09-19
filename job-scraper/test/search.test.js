@@ -30,8 +30,10 @@ const SERVER_AREAS = [
 
   const stored = {
     helperUrl: "http://127.0.0.1:5577",
-    savedGeos: [{ label: "Italy", urn: "103350119" }],
+    savedGeos: [{ label: "Italy", id: "103350119" }],
+    savedSchools: [{ label: "PoliTo", id: "15122" }],
     lastGeo: "103350119",
+    lastSchool: "15122",
     lastNetwork: "S",
   };
   window.chrome = {
@@ -88,26 +90,26 @@ const SERVER_AREAS = [
   const u = new window.URL(opened[0]);
   ok(u.hostname === "www.linkedin.com" && u.pathname === "/search/results/people/", "  LinkedIn people search");
   ok(u.searchParams.get("keywords").includes('"firmware engineer"'), "  carries the TITLES.md string");
-  ok(!u.searchParams.get("keywords").includes("Politecnico"), "  no school term while the toggle is off");
+  ok(!u.searchParams.get("keywords").includes("Politecnico"), "  the school is not a keyword");
 
   const toggle = (id, on) => {
     doc.getElementById(id).checked = on;
     doc.getElementById(id).dispatchEvent(new window.Event("change"));
   };
-  toggle("polito", true);
-  await tick();
-  card("firmware-platform").querySelectorAll("button")[0].dispatchEvent(new window.Event("click"));
-  ok(new window.URL(opened[1]).searchParams.get("keywords").includes('"Politecnico di Torino"'),
-     "PoliTo toggle adds the school to the query");
+
+  // The school is a LinkedIn filter, never a keyword: as a keyword it ANDs
+  // with the Boolean string and can empty an otherwise good search.
+  ok(!new window.URL(opened[0]).searchParams.get("keywords").includes("Politecnico"),
+     "the school never enters the keywords");
+  ok(new window.URL(opened[0]).searchParams.get("schoolFilter") === '["15122"]',
+     "it rides along as LinkedIn's own schoolFilter instead");
 
   const warnCount = () => [...doc.querySelectorAll(".area button")].filter((b) => b.textContent.includes("terms")).length;
-  toggle("polito", false);
-  await tick();
   ok(warnCount() === 0, "curated strings alone stay under the ~15 term limit");
-  toggle("polito", true); toggle("senior", true);
+  toggle("senior", true);
   await tick();
-  ok(warnCount() > 0, `both toggles push the long strings over and warn (${warnCount()} buttons)`);
-  toggle("polito", false); toggle("senior", false);
+  ok(warnCount() > 0, `the seniority toggle pushes the long strings over and warns (${warnCount()} buttons)`);
+  toggle("senior", false);
   await tick();
 
   console.log("\nadding a location");
@@ -125,8 +127,8 @@ const SERVER_AREAS = [
   await tick();
   const status = doc.getElementById("geo-status");
   ok(status.className === "bad", "saving with an empty URL is reported as a failure");
-  ok(/Set the Location filter on LinkedIn first/.test(status.textContent),
-     `  and says what was missing (${status.textContent.slice(0, 40)}...)`);
+  ok(/Set one on LinkedIn first/.test(status.textContent),
+     `  and says what was missing (${status.textContent.slice(0, 44)}...)`);
 
   doc.getElementById("geo-url").value =
     'https://www.linkedin.com/search/results/people/?keywords=x&geoUrn=%5B%22103644278%22%5D';
@@ -142,20 +144,23 @@ const SERVER_AREAS = [
   console.log("\nlocation and connection degree ride along on every search");
   doc.getElementById("geo").value = "103350119";
   ok(doc.getElementById("geo").value === "103350119", "the saved location is preselected");
-  ok(doc.getElementById("network").value === "S", "2nd degree is the default");
+  ok(doc.getElementById("network").value === "S", "the last connection filter is restored");
+  ok(doc.getElementById("school").value === "15122", "so is the last school");
   card("firmware-platform").querySelectorAll("button")[0].dispatchEvent(new window.Event("click"));
   const filtered = new window.URL(opened[opened.length - 1]);
   ok(filtered.searchParams.get("geoUrn") === '["103350119"]', "geoUrn is applied, so no manual filter step");
   ok(filtered.searchParams.get("network") === '["S"]', "network is applied");
 
   // Ids are copied out of a URL the user already filtered — never guessed.
-  const geoUrn = window.eval("geoUrnFromUrl");
-  ok(geoUrn('https://www.linkedin.com/search/results/people/?keywords=x&geoUrn=%5B%22103644278%22%5D') === "103644278",
-     "a pasted LinkedIn URL yields its geoUrn");
-  ok(geoUrn("https://www.linkedin.com/search/results/people/?keywords=x") === null,
-     "a URL with no location filter is rejected");
-  ok(geoUrn("https://example.com/?geoUrn=%5B%221%22%5D") === null, "a non-LinkedIn URL is rejected");
-  ok(geoUrn("not a url") === null, "junk is rejected");
+  const parse = window.eval("filterFromUrl");
+  const geoHit = parse('https://www.linkedin.com/search/results/people/?keywords=x&geoUrn=%5B%22103644278%22%5D');
+  ok(geoHit.kind === "location" && geoHit.id === "103644278", "a pasted URL yields its geoUrn as a location");
+  const schoolHit = parse('https://www.linkedin.com/search/results/people/?keywords=x&schoolFilter=%5B%2215122%22%5D');
+  ok(schoolHit.kind === "school" && schoolHit.id === "15122", "and a schoolFilter as a school");
+  ok(parse("https://www.linkedin.com/search/results/people/?keywords=x") === null,
+     "a URL with neither filter is rejected");
+  ok(parse("https://example.com/?geoUrn=%5B%221%22%5D") === null, "a non-LinkedIn URL is rejected");
+  ok(parse("not a url") === null, "junk is rejected");
 
   const postsBtn = [...doc.querySelectorAll("#graph button")].find((b) => b.textContent.includes("post"));
   postsBtn.dispatchEvent(new window.Event("click"));

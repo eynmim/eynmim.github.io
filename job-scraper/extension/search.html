@@ -33,6 +33,7 @@
     .bar input[type="text"] { flex: 1; min-width: 180px; }
     .bar input.short { flex: 0 0 90px; min-width: 90px; }
     .hint { color: var(--fg-dim); font-size: 12px; flex-basis: 100%; }
+    .hint-inline { color: var(--fg-dim); font-size: 12px; flex: 1; min-width: 240px; }
     #geo-status { color: var(--good); font-size: 12px; flex-basis: 100%; }
     #geo-status.bad { color: var(--bad); }
     .quota { margin-left: auto; font-weight: 600; }
@@ -82,8 +83,11 @@
   </div>
 
   <div class="bar">
-    <label><input type="checkbox" id="polito" /> add “Politecnico di Torino” to every search</label>
     <label><input type="checkbox" id="senior" /> only senior / staff / lead</label>
+    <span class="hint-inline">
+      Every extra keyword narrows with AND. Use the filters below for school and place —
+      those are LinkedIn’s own and do not fight the search terms.
+    </span>
     <span id="quota" class="quota">—</span>
   </div>
 
@@ -91,23 +95,26 @@
     <label>Location
       <select id="geo"><option value="">anywhere</option></select>
     </label>
+    <label>School
+      <select id="school"><option value="">any</option></select>
+    </label>
     <label>Connection
       <select id="network">
         <option value="">any</option>
         <option value="F">1st</option>
-        <option value="S" selected>2nd</option>
+        <option value="S">2nd</option>
         <option value="O">3rd+</option>
       </select>
     </label>
-    <button id="geo-add-toggle" class="secondary">Add a location</button>
+    <button id="geo-add-toggle" class="secondary">Add a filter</button>
   </div>
 
   <div class="bar" id="geo-add" hidden>
     <span class="hint">
-      Set the Location filter once in LinkedIn’s own filter bar, then paste that page’s URL here.
-      The id is read from it, so it is always the right one.
+      Set Location or School once in LinkedIn’s own filter bar, then paste that page’s URL here.
+      The id is read out of it, so it is always the right one — nothing is guessed.
     </span>
-    <input id="geo-url" type="text" placeholder="https://www.linkedin.com/search/results/people/?…geoUrn=…" />
+    <input id="geo-url" type="text" placeholder="https://www.linkedin.com/search/results/people/?…geoUrn=… or …schoolFilter=…" />
     <input id="geo-label" class="short" type="text" placeholder="Turin" />
     <button id="geo-save">Save</button>
     <button id="geo-remove" class="secondary">Remove selected</button>
