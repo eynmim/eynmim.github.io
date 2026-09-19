@@ -23,7 +23,8 @@ const TRIAGE_RESULTS = [
     reason: "open to work and one year out of university", open_to_work: true, degree: "2nd" },
   { name: "Staff Person", headline: "Staff Firmware Engineer at ST", location: "Turin",
     url: "https://www.linkedin.com/in/staff", verdict: "draft", score: 88, area: "firmware-platform",
-    reason: "staff firmware in Turin, five to eight years ahead", open_to_work: false, degree: "2nd" },
+    reason: "staff firmware in Turin, five to eight years ahead",
+    overlap: "ESP32-S3 and BLE, both on the CV", open_to_work: false, degree: "2nd" },
 ];
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; console.log("  ok   " + m); } else { fail++; console.log("  FAIL " + m); } };
@@ -148,6 +149,11 @@ async function openPopup(tabUrl, sendOverride) {
   ok(first.querySelector(".verdict").textContent === "draft", "each row carries its verdict");
   ok(first.querySelector(".score").textContent === "88", "and its score");
   ok(/five to eight years ahead/.test(first.textContent), "and the reason, so the call is checkable");
+  ok(/In common: ESP32-S3 and BLE/.test(first.textContent),
+     "and what the card shares with the CV, which is what a first line opens with");
+  const vagueRow = [...search.doc.querySelectorAll("#people-list li")]
+    .find((li) => li.textContent.includes("Vague Person"));
+  ok(!/In common:/.test(vagueRow.textContent), "  nothing shown when there is no overlap");
 
   search.doc.getElementById("hide-skip").checked = false;
   search.doc.getElementById("hide-skip").dispatchEvent(new search.window.Event("change"));

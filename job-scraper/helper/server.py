@@ -610,13 +610,36 @@ Engineer") and the area cannot be told from the card. These are worth opening
 only when nothing better is on the page: a small-company "Electronics Engineer"
 is often exactly the right person, and the card cannot tell you.
 
+READ THE CV BELOW AND USE IT. The generic rules above only sort out who is
+plausible; the CV is what makes one plausible person better than another. Raise
+the score when the card shows something the candidate can actually open a
+conversation with:
+
+- the same parts and tools the CV names, not just the same job family. Someone
+  whose headline carries a chip family, an RTOS or a protocol the candidate has
+  shipped is worth far more than a generic "Embedded Engineer", because there is
+  a real question to ask and a real thing in common to open with.
+- the same school or the same city as the CV
+- a company the CV already touches, or a direct competitor or supplier of one
+- the area next door to what the candidate has done, where the question "what
+  did you gain and lose moving there" is a genuine one
+
+Lower it when there is no overlap at all: nothing in the card connects to
+anything in the CV, so the first message would have to be generic, and generic
+is what gets ignored.
+
+Name that overlap explicitly in "overlap" — the concrete shared thing, in a few
+words, quoting the card and the CV rather than describing them. Empty string
+when there is genuinely nothing.
+
 Score 0-100 for how worth opening they are. Be decisive: most cards on a page
 are not worth a message, and saying so saves the candidate more time than a
 generous score does.
 
 Return JSON: {"results": [{"i": <index as given>, "verdict": "draft"|"maybe"|"skip",
 "score": <int>, "reason": "<one short sentence, concrete, naming what in the card
-decided it>", "area": "<one of AREAS or other>"}]}
+decided it>", "overlap": "<the shared thing, or empty>",
+"area": "<one of AREAS or other>"}]}
 
 One entry per person, same indexes, no extras. AREAS: """ + ", ".join(AREAS) + "."
 
@@ -690,13 +713,14 @@ def triage_people(cv_text: str, fork: str, people: list[dict]) -> list[dict]:
         except (TypeError, ValueError):
             score = 0
         by_index[i] = {"verdict": verdict, "score": score, "area": area,
-                       "reason": str(r.get("reason") or "").strip()}
+                       "reason": str(r.get("reason") or "").strip(),
+                       "overlap": str(r.get("overlap") or "").strip()}
 
     # A card the model skipped entirely is a "maybe", not a silent disappearance.
     out = []
     for i, p in enumerate(people):
         row = by_index.get(i) or {
-            "verdict": "maybe", "score": 0, "area": "other",
+            "verdict": "maybe", "score": 0, "area": "other", "overlap": "",
             "reason": "the model did not rate this card",
         }
         out.append({**p, **row})

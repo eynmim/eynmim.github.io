@@ -139,6 +139,12 @@ reads the cards already on screen and sorts them: *draft* for someone worth open
 you ask for them. One model call for the whole page, on the cheaper `MODEL` rather than
 `OUTREACH_MODEL`, so a page costs about as much as a fifteenth of the daily draft budget.
 
+It judges against your CV, not just against seniority. A card carrying a chip family, an
+RTOS or a protocol you have actually shipped beats a generic "Embedded Engineer", because
+there is a real question to ask and a real thing to open with — and the row says what that
+thing is (`In common: …`). No overlap means the first message would have to be generic,
+and generic is what gets ignored.
+
 It opens nothing and clicks nothing — it reads a page you opened yourself, the same way
 the job scanner does. And it is a filter, not a verdict: a search card has a headline and
 a location and little else, so *maybe* really does mean *look yourself*. A small-company

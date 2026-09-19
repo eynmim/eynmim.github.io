@@ -154,6 +154,11 @@ ok(all(f"[{i}]" in prompt for i in range(len(PEOPLE))),
 ok("badge: OPEN TO WORK" in prompt, "the open-to-work badge is passed through")
 ok(all(a in server.TRIAGE_INSTRUCTIONS for a in ("firmware-platform", "other")),
    "the instructions carry the same AREAS the tracker uses")
+# The CV is passed in the system instruction; the rules have to actually use it,
+# or the sort is generic seniority filtering with a CV attached for decoration.
+ok("READ THE CV BELOW AND USE IT" in server.TRIAGE_INSTRUCTIONS,
+   "the rules tell the model to judge against the CV, not just seniority")
+ok("overlap" in server.TRIAGE_INSTRUCTIONS, "and to name the concrete thing in common")
 
 
 class FakeModels:
@@ -175,7 +180,8 @@ class FakeClient:
 
 real_client = server.client
 server.client = FakeClient(json.dumps({"results": [
-    {"i": 0, "verdict": "draft", "score": 88, "area": "firmware-platform", "reason": "staff, Turin"},
+    {"i": 0, "verdict": "draft", "score": 88, "area": "firmware-platform",
+     "reason": "staff, Turin", "overlap": "ESP32-S3, on both"},
     {"i": 1, "verdict": "skip", "score": 150, "area": "made-up", "reason": "open to work"},
     {"i": 9, "verdict": "draft", "score": 50, "area": "other", "reason": "index out of range"},
 ]}))
@@ -185,6 +191,8 @@ try:
     ok(len(out) == 3, "one row back per card, none dropped")
     ok(out[0]["verdict"] == "draft" and out[0]["score"] == 88, "a good card comes back as draft")
     ok(out[0]["name"] == "Staff Person", "  with the card's own fields still attached")
+    ok(out[0]["overlap"] == "ESP32-S3, on both", "  and the thing it shares with the CV")
+    ok(out[1]["overlap"] == "", "a card with no stated overlap gets an empty one, not a missing key")
     ok(out[1]["score"] == 100, "a score above 100 is clamped")
     ok(out[1]["area"] == "other", "an area the tracker does not know falls back to 'other'")
     ok(out[2]["verdict"] == "maybe", "a card the model skipped becomes 'maybe', not a disappearance")

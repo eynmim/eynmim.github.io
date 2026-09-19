@@ -185,6 +185,7 @@ button.secondary {
 .verdict.v-maybe { background: var(--warn); color: #0f1419; }
 .verdict.v-skip  { border: 1px solid var(--border); color: var(--fg-dim); }
 #triage-summary { color: var(--fg-dim); }
+.overlap { margin-top: 4px; font-size: 11px; color: var(--good); }
 
 #diag { margin-top: 10px; }
 #diag-body {

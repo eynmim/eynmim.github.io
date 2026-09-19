@@ -423,6 +423,14 @@ function renderTriage() {
       reason.textContent = p.reason;
       li.appendChild(reason);
     }
+    // The shared thing between their card and the CV — what the first line of
+    // a message would open with. No overlap means a generic message.
+    if (p.overlap) {
+      const overlap = document.createElement("div");
+      overlap.className = "overlap";
+      overlap.textContent = `In common: ${p.overlap}`;
+      li.appendChild(overlap);
+    }
     if (p.area) {
       const tags = document.createElement("div");
       tags.className = "job-tags";
