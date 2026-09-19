@@ -532,6 +532,20 @@ def outreach():
     except Exception as e:
         return jsonify(error=str(e)), 502
     print(f"[outreach] -> {data.get('mentor_type')} fit={data.get('fit_score')}")
+    log_event(
+        "outreach",
+        model=OUTREACH_MODEL,
+        forced_type=mentor_type,
+        profile={k: trim(profile.get(k), 200) for k in
+                 ("name", "headline", "location", "url", "experience", "education")},
+        profile_raw_chars=len(profile.get("raw") or ""),
+        # The lint's own verdict on what shipped, so a rule that keeps slipping
+        # through shows up as a pattern rather than as a one-off impression.
+        lint=draft_problems(data),
+        draft={k: data.get(k) for k in
+               ("fit_score", "fit_reason", "mentor_type", "area", "why_you",
+                "connection_note", "message", "email_subject", "email_body", "follow_up")},
+    )
     return jsonify(data)
 
 
@@ -577,6 +591,35 @@ def outreach_due():
 # Two conversations per area is the exploration target in README D2. The popup's
 # search launcher shows this so you can see which areas are still untouched.
 AREA_TARGET = int(os.environ.get("AREA_TARGET", "2"))
+
+
+# A run log, so a bad draft or a wrong ranking can be looked at afterwards
+# instead of reconstructed from memory. It records what the page adapter
+# actually extracted alongside what the model made of it, which is the pair
+# that matters when either one misbehaves.
+#
+# It holds real people's names: gitignored, same rule as outreach.csv.
+LOG_DIR = Path(os.environ.get("LOG_DIR", ROOT / "logs")).resolve()
+
+
+def log_event(kind: str, **fields) -> None:
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        path = LOG_DIR / f"{date.today().isoformat()}.jsonl"
+        row = {"ts": datetime.now().isoformat(timespec="seconds"), "event": kind, **fields}
+        with path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    except Exception as e:
+        # Logging must never take the request down with it.
+        print(f"[log] could not write: {e}", file=sys.stderr)
+
+
+def trim(value, limit: int = 300):
+    if isinstance(value, str):
+        return value if len(value) <= limit else value[:limit] + "…"
+    if isinstance(value, list):
+        return [trim(v, limit) for v in value]
+    return value
 
 
 TRIAGE_INSTRUCTIONS = """You triage a page of LinkedIn people-search results for
@@ -750,6 +793,17 @@ def triage():
     for r in results:
         counts[r["verdict"]] = counts.get(r["verdict"], 0) + 1
     print(f"[triage] -> {counts}")
+    log_event(
+        "triage",
+        model=MODEL,
+        counts=counts,
+        # Both halves: what the adapter read off each card, and what came back.
+        cards=[{k: trim(p.get(k), 200) for k in
+                ("name", "headline", "location", "snippet", "degree", "open_to_work", "url")}
+               for p in results],
+        verdicts=[{k: r.get(k) for k in ("name", "verdict", "score", "area", "reason", "overlap")}
+                  for r in results],
+    )
     return jsonify(results=results)
 
 

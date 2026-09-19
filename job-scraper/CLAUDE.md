@@ -10,8 +10,11 @@ Hard rules for this folder:
   draft many people at once, but it must never click, send, or open LinkedIn's
   own compose UI. If a change would make a message leave the machine without Ali
   reading it first, it is the wrong change.
-- `helper/outreach.csv` holds real people's names. It is gitignored — never
-  commit it, never paste its rows into a public artifact.
+- `helper/outreach.csv` and `helper/logs/` hold real people's names. Both are
+  gitignored — never commit them, never paste their contents into a public
+  artifact. `logs/<date>.jsonl` is the first place to look when a draft or a
+  ranking looks wrong: it records what the page adapter extracted next to what
+  the model made of it, plus the lint's verdict on the draft that shipped.
 - `helper/.env` holds the Gemini key — never commit, never print it.
 - Keep `OUTREACH_MODEL` on `gemini-2.5-flash`; `flash-lite` drops the
   "one numeric achievement" rule (verified).

@@ -200,6 +200,30 @@ try:
 finally:
     server.client = real_client
 
+print("\nthe run log")
+log_dir = tmpdir / "logs"
+server.LOG_DIR = log_dir
+server.log_event("triage", counts={"draft": 1}, cards=[{"name": "A"}])
+log_file = log_dir / f"{datetime.now().date().isoformat()}.jsonl"
+ok(log_file.exists(), "a line is written for the day")
+entry = json.loads(log_file.read_text().splitlines()[0])
+ok(entry["event"] == "triage" and entry["counts"] == {"draft": 1}, "with the fields it was given")
+ok("ts" in entry, "and a timestamp")
+server.log_event("outreach", draft={"fit_score": 90})
+ok(len(log_file.read_text().splitlines()) == 2, "appends rather than overwrites")
+
+ok(server.trim("x" * 500, 100).endswith("…") and len(server.trim("x" * 500, 100)) == 101,
+   "long values are trimmed so a raw page does not fill the log")
+ok(server.trim("short", 100) == "short", "short ones are left alone")
+ok(server.trim(["a" * 500], 10)[0].endswith("…"), "lists are trimmed item by item")
+ok(server.trim(True) is True, "non-strings pass through")
+
+# A logging failure must not take a draft down with it.
+server.LOG_DIR = pathlib.Path("/dev/null/cannot-exist")
+server.log_event("triage", counts={})
+ok(True, "a log that cannot be written does not raise")
+server.LOG_DIR = log_dir
+
 print("\nsafety")
 ok(REAL_CSV.exists() == real_existed, "the real outreach.csv was neither created nor modified")
 

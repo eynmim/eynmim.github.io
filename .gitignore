@@ -9,3 +9,4 @@ job-scraper/helper/.venv/
 job-scraper/helper/__pycache__/
 job-scraper/helper/cache/
 job-scraper/helper/outreach.csv
+job-scraper/helper/logs/

@@ -318,6 +318,12 @@ score, reason and area per card — one call, `MODEL`, prompt in `TRIAGE_INSTRUC
 Cards the model fails to rate come back as `maybe` rather than vanishing, and an index it
 invents is dropped. The page side is `extension/adapters/linkedin-people.js`.
 
+Every `/triage` and `/outreach` call appends a line to `helper/logs/<date>.jsonl`: what
+the page adapter extracted, what the model returned, and for a draft the lint's verdict
+on it. That is the pair you need when a ranking looks wrong — it says whether the adapter
+misread the page or the model misjudged it, which are different bugs. Gitignored: real
+names. `LOG_DIR` moves it.
+
 `GET /outreach/coverage` counts the tracker by area (`contacted`, `replied`) plus
 `sent_today`, and is what the Search and Batch pages show. It reads the same CSV; no new
 state. The search strings live in `extension/search.js` as data copied from TITLES.md —
