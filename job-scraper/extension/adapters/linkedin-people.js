@@ -55,8 +55,12 @@
     );
   }
 
+  // Short and comma-separated. A sentence with one comma in it is not a place,
+  // however much it looks like one to a regex.
   function looksLikePlace(t) {
-    return /^[^,]{2,60}(,\s*[^,]{2,60}){1,3}$/.test(t) && !/\d/.test(t);
+    if (/\d/.test(t) || t.length > 60) return false;
+    if (t.trim().split(/\s+/).length > 6) return false;
+    return /^[^,]{2,40}(,\s*[^,]{2,40}){1,3}$/.test(t);
   }
 
   function slugOf(href) {

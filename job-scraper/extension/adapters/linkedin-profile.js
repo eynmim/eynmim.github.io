@@ -59,8 +59,15 @@
   // "Bracknell, England, United Kingdom" rather than "IC Resources": the top
   // card puts the current employer between the headline and the location, and
   // only one of the two is written like a place.
+  //
+  // The word count matters as much as the commas. A sentence out of the About
+  // text — "During the project, I was also able to work with my brother" — has
+  // one comma, no digits, and was being read as a location. Place names are
+  // short: three or four words, rarely more.
   function looksLikePlace(t) {
-    return /^[^,]{2,60}(,\s*[^,]{2,60}){1,3}$/.test(t) && !/\d/.test(t);
+    if (/\d/.test(t) || t.length > 60) return false;
+    if (t.trim().split(/\s+/).length > 6) return false;
+    return /^[^,]{2,40}(,\s*[^,]{2,40}){1,3}$/.test(t);
   }
 
   function section(anchorId, headingRe) {

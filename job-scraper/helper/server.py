@@ -539,6 +539,10 @@ def outreach():
         profile={k: trim(profile.get(k), 200) for k in
                  ("name", "headline", "location", "url", "experience", "education")},
         profile_raw_chars=len(profile.get("raw") or ""),
+        # The model is given `raw` as well as the structured fields, so without
+        # it here there is no way to tell an invented fact from one that was
+        # only ever in the page text. CLAUDE.md requires that check.
+        profile_raw=trim(profile.get("raw") or "", 4000),
         # The lint's own verdict on what shipped, so a rule that keeps slipping
         # through shows up as a pattern rather than as a one-off impression.
         lint=draft_problems(data),

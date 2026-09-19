@@ -113,6 +113,22 @@ const NEW_DOM = `
   ok(!b.profile.education.some((e) => /^Show all/i.test(e)), "  the 'Show all' footer is not an entry");
   ok(b.profile.raw.includes("Callum Allen"), "raw still carries the page as the last-resort fallback");
 
+  // A live run read "During the project, I was also able to work with my
+  // brother" as the location: one comma, no digits, so the old rule accepted it.
+  console.log("\na sentence is not a location");
+  const PROSE_IN_TOP_CARD = `
+<title>Silas Perry | LinkedIn</title>
+<main>
+  <section>
+    <div><span>Silas Perry</span><span>·&nbsp;</span><span>3rd</span><span>Senior Embedded Software/Firmware Engineer</span><span>During the project, I was also able to work with my brother</span><span>Omaha, Nebraska, United States</span></div>
+  </section>
+  <section><h2>About</h2><p>I build embedded systems.</p></section>
+</main>`;
+  const c = run(PROSE_IN_TOP_CARD, "https://www.linkedin.com/in/silas-r-perry/");
+  ok(c.profile.headline === "Senior Embedded Software/Firmware Engineer", `headline still right (${c.profile.headline})`);
+  ok(c.profile.location === "Omaha, Nebraska, United States", `location skips the prose (${c.profile.location})`);
+  ok(!/brother/.test(c.profile.location), "  the About sentence is not mistaken for a place");
+
   console.log("\nthe field the tracker depends on");
   // Mark as sent writes profile.name into outreach.csv. A blank one silently
   // breaks follow-ups and duplicate avoidance, so it gets its own assertion.
