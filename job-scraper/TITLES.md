@@ -10,9 +10,19 @@ driver. So search three ways and let the fit score sort it out:
 3. **by graph** — school (Politecnico di Torino), company, and "People also viewed".
 
 LinkedIn people search accepts Boolean in the keyword box: `AND`, `OR`, `NOT`, quotes,
-parentheses. Paste a string below, then narrow with **Locations** (Italy / Germany /
-Norway…), **Current company**, **School**. Keep each string under ~15 terms; LinkedIn
-silently truncates long ones.
+parentheses. Then narrow with **Locations** (Italy / Germany / Norway…), **Current
+company**, **School**.
+
+**Term limit, measured against the live site — not the ~15 this file used to claim.**
+Two, three and five `OR` terms all return results. **Seven returns nothing at all**, and
+LinkedIn does not say why: no warning, no truncation notice, just "No results found",
+which reads exactly like a market with nobody in it. So the strings below are a
+*vocabulary*, not something to paste whole. The extension's Search page splits each list
+into groups of four and gives you a button per group; work through them one at a time.
+
+Two things that are **filters, not keywords**: school and location. As keywords they AND
+with the terms and empty the search. Use LinkedIn's own filter bar, or the Search page's
+Location and School dropdowns.
 
 ---
 

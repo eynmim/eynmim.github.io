@@ -110,10 +110,13 @@ nothing is ever sent.
 
 **Search** turns [TITLES.md](TITLES.md) into buttons. Per area it shows who to look for,
 the area-specific question from §D2, how many people you have already contacted out of the
-two you are aiming for, and one click per Boolean string (by title, by tools). Two toggles
-add `"Politecnico di Torino"` or a seniority filter to every search, and a button warns
-when the string passes ~15 terms because LinkedIn silently truncates past that. The counter
-in the corner is today's messages against the daily cap in §D.
+two you are aiming for, and a button per group of search terms. The counter in the corner
+is today's messages against the daily cap in §D.
+
+Groups of four, because LinkedIn returns **nothing at all** past about six terms — no
+warning, no truncation, just "No results found", which looks identical to a market with
+nobody in it. Measured: 2, 3 and 5 terms work; 7 does not. The seniority dropdown adds one
+term, not five, for the same reason.
 
 **Location**, **School** and **Connection** ride along on every people search, so the
 filter bar is not a step you repeat. These are LinkedIn's own filters, not keywords —

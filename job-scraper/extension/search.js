@@ -1,21 +1,27 @@
 // Search launcher. Turns TITLES.md into one-click LinkedIn people searches and
 // shows how many people you have already contacted per area (helper's CSV).
 // It only builds URLs — no scraping, no automated clicking, no sending.
+//
+// Term groups, not one long Boolean string. Measured against the live site:
+// 2, 3 and 5 terms all return results; 7 returns nothing at all, silently.
+// TITLES.md's "keep it under ~15 terms" was written against an older LinkedIn
+// and is now wrong in the direction that looks like an empty market.
 
 const HELPER_DEFAULT = "http://127.0.0.1:5577";
+const GROUP = 4; // terms per button, leaving headroom under the limit
+const MAX_TERMS = 6; // past this LinkedIn returns zero rather than truncating
 
-// Boolean strings are copied from TITLES.md. `question` is the area-specific
-// opener from README D2; areas D2 does not cover have none, so use the four
-// common questions for those.
+// Terms come from TITLES.md. `question` is the area-specific opener from
+// README D2; areas D2 does not cover have none, so use the four common ones.
 const AREAS = [
   {
     id: "firmware-platform",
     name: "Firmware / embedded software",
     who: "Senior/Staff Firmware @ Nordic, Espressif, Silicon Labs, ST",
     question: "how much of your week is new code vs debugging someone else's",
-    searches: [
-      { label: "by title", q: '("firmware engineer" OR "embedded software" OR "embedded systems engineer" OR "embedded developer" OR "IoT engineer" OR "sviluppatore firmware" OR "ingegnere firmware" OR "sviluppatore embedded")' },
-      { label: "by tools", q: '(STM32 OR ESP32 OR nRF52 OR nRF5340 OR FreeRTOS OR Zephyr OR "ESP-IDF" OR "bare metal" OR BLE OR "Bluetooth Low Energy")' },
+    sets: [
+      { label: "titles", terms: ["firmware engineer", "embedded software", "embedded systems engineer", "embedded developer", "IoT engineer", "sviluppatore firmware", "ingegnere firmware", "sviluppatore embedded"] },
+      { label: "tools", terms: ["STM32", "ESP32", "nRF52", "nRF5340", "FreeRTOS", "Zephyr", "ESP-IDF", "bare metal", "BLE", "Bluetooth Low Energy"] },
     ],
   },
   {
@@ -23,9 +29,9 @@ const AREAS = [
     name: "Hardware / PCB / power",
     who: "Hardware engineer @ Leonardo, Marelli, Turin startups",
     question: "in the first 3 years how much is design vs BOM and suppliers",
-    searches: [
-      { label: "by title", q: '("electronics engineer" OR "electronic design" OR "hardware engineer" OR "hardware design" OR "PCB design" OR "power electronics" OR "ingegnere elettronico" OR "progettista elettronico" OR "progettista hardware" OR "progettista PCB")' },
-      { label: "by tools", q: '(KiCad OR Altium OR "Altium Designer" OR OrCAD OR Eagle OR "schematic capture" OR "PCB layout" OR LTspice OR EMC OR "DC-DC")' },
+    sets: [
+      { label: "titles", terms: ["electronics engineer", "electronic design", "hardware engineer", "hardware design", "PCB design", "power electronics", "ingegnere elettronico", "progettista elettronico", "progettista hardware", "progettista PCB"] },
+      { label: "tools", terms: ["KiCad", "Altium", "OrCAD", "Eagle", "schematic capture", "PCB layout", "LTspice", "EMC", "DC-DC"] },
     ],
   },
   {
@@ -33,8 +39,8 @@ const AREAS = [
     name: "Embedded security",
     who: "Product/Firmware Security @ ST secure MCU, NXP, Infineon; automotive cyber @ Stellantis, Marelli",
     question: "how much is engineering vs compliance and paperwork",
-    searches: [
-      { label: "search", q: '("product security" OR "embedded security" OR "firmware security" OR "hardware security" OR "IoT security" OR "automotive cybersecurity" OR "ISO 21434" OR "secure boot" OR TrustZone OR "side channel" OR "fault injection")' },
+    sets: [
+      { label: "terms", terms: ["product security", "embedded security", "firmware security", "hardware security", "IoT security", "automotive cybersecurity", "ISO 21434", "secure boot", "TrustZone", "side channel", "fault injection"] },
     ],
   },
   {
@@ -42,8 +48,8 @@ const AREAS = [
     name: "Embedded Linux / platform",
     who: "BSP/platform engineer at camera, gateway, robotics companies; Bootlin, Toradex",
     question: "what made you leave bare-metal for Linux, any regrets",
-    searches: [
-      { label: "search", q: '("embedded linux" OR BSP OR Yocto OR Buildroot OR "kernel driver" OR "device driver" OR "U-Boot" OR "linux kernel")' },
+    sets: [
+      { label: "terms", terms: ["embedded linux", "BSP", "Yocto", "Buildroot", "kernel driver", "device driver", "U-Boot", "linux kernel"] },
     ],
   },
   {
@@ -51,8 +57,8 @@ const AREAS = [
     name: "Silicon / SoC / FPGA",
     who: "Design/Verification @ ST Agrate, Infineon Villach",
     question: "what does someone with product-firmware background lose and gain going into silicon",
-    searches: [
-      { label: "search", q: '("FPGA" OR "RTL design" OR "ASIC" OR "SoC" OR "digital design engineer" OR "verification engineer" OR UVM OR SystemVerilog OR VHDL OR "progettista FPGA" OR microelettronica)' },
+    sets: [
+      { label: "terms", terms: ["FPGA", "RTL design", "ASIC", "SoC", "digital design engineer", "verification engineer", "UVM", "SystemVerilog", "VHDL", "progettista FPGA", "microelettronica"] },
     ],
   },
   {
@@ -60,8 +66,8 @@ const AREAS = [
     name: "Automotive / functional safety",
     who: "@ Stellantis/CRF, Marelli, Italdesign, Bosch Italia",
     question: "what do outsiders get wrong about automotive work",
-    searches: [
-      { label: "search", q: '(AUTOSAR OR "functional safety" OR "ISO 26262" OR "ECU software" OR "battery management" OR BMS OR ADAS OR "model-based design" OR "sicurezza funzionale" OR centraline)' },
+    sets: [
+      { label: "terms", terms: ["AUTOSAR", "functional safety", "ISO 26262", "ECU software", "battery management", "BMS", "ADAS", "model-based design", "sicurezza funzionale", "centraline"] },
     ],
   },
   {
@@ -69,8 +75,8 @@ const AREAS = [
     name: "Edge AI / DSP",
     who: "ML-on-edge @ Arduino, ST (STM32 AI), vision startups",
     question: "how much ML vs embedded do you need, which is harder to learn late",
-    searches: [
-      { label: "search", q: '("edge AI" OR TinyML OR "DSP engineer" OR "signal processing" OR "sensor fusion" OR "TensorFlow Lite" OR "embedded machine learning" OR "computer vision" embedded)' },
+    sets: [
+      { label: "terms", terms: ["edge AI", "TinyML", "DSP engineer", "signal processing", "sensor fusion", "TensorFlow Lite", "embedded machine learning"] },
     ],
   },
   {
@@ -78,8 +84,8 @@ const AREAS = [
     name: "Robotics / control / motion",
     who: "@ Comau, PoliTo spin-offs",
     question: "where's the line between robotics engineer and embedded engineer in your team",
-    searches: [
-      { label: "search", q: '("robotics engineer" OR "control systems" OR "motor control" OR "motion control" OR mechatronics OR ROS OR UAV OR drone OR avionics OR "ingegnere robotica" OR "ingegnere controlli" OR meccatronico)' },
+    sets: [
+      { label: "terms", terms: ["robotics engineer", "control systems", "motor control", "motion control", "mechatronics", "ROS", "UAV", "drone", "avionics", "ingegnere robotica", "ingegnere controlli", "meccatronico"] },
     ],
   },
   {
@@ -87,9 +93,9 @@ const AREAS = [
     name: "Low power / wireless / RF",
     who: "RF and wireless hardware engineers; anyone whose product runs on a battery",
     question: null,
-    searches: [
-      { label: "by title", q: '("RF engineer" OR "RF design" OR "antenna" OR "wireless systems" OR "radiofrequenza" OR "progettista RF")' },
-      { label: "by tools", q: '(BLE OR "Bluetooth Low Energy" OR LoRa OR LoRaWAN OR Zigbee OR nRF52 OR "low power" OR "battery life")' },
+    sets: [
+      { label: "titles", terms: ["RF engineer", "RF design", "antenna", "wireless systems", "radiofrequenza", "progettista RF"] },
+      { label: "tools", terms: ["BLE", "Bluetooth Low Energy", "LoRa", "LoRaWAN", "Zigbee", "nRF52", "low power", "battery life"] },
     ],
   },
   {
@@ -97,37 +103,42 @@ const AREAS = [
     name: "Bridging roles, test and validation",
     who: "TITLES.md §3 and §4 — highest-value for an exploration: they have seen several areas from inside, and nobody messages the test people so they answer",
     question: null,
-    searches: [
-      { label: "hardware + firmware both", q: '("systems engineer" embedded) OR "embedded systems architect" OR "field application engineer" OR "applications engineer" OR "hardware and firmware" OR "firmware and hardware" OR "ingegnere di sistema" OR "ingegnere meccatronico"' },
-      { label: "test / validation", q: '("test engineer" (hardware OR embedded OR electronics)) OR "validation engineer" OR "EMC engineer" OR "NPI engineer" OR "bring-up" OR "ingegnere di validazione" OR "collaudo"' },
+    sets: [
+      { label: "hardware + firmware", terms: ["embedded systems architect", "field application engineer", "applications engineer", "hardware and firmware", "ingegnere di sistema", "ingegnere meccatronico"] },
+      { label: "test / validation", terms: ["validation engineer", "EMC engineer", "NPI engineer", "bring-up", "ingegnere di validazione", "collaudo"] },
     ],
   },
 ];
 
 const GRAPH = [
   {
-    label: "PoliTo alumni",
-    q: '"Politecnico di Torino" (firmware OR embedded OR PCB OR FPGA)',
-    why: "alumni answer; title irrelevant",
+    label: "Alumni",
+    terms: ["firmware", "embedded", "PCB", "FPGA"],
+    why: "use with the School filter set to PoliTo — alumni answer, title irrelevant",
   },
   {
     label: "Turin employers",
-    q: '(STMicroelectronics OR Leonardo OR Marelli OR Comau OR Stellantis OR Italdesign) embedded',
+    terms: ["STMicroelectronics", "Leonardo", "Marelli", "Comau"],
     why: "company defines the work better than the title",
   },
   {
+    label: "More Turin employers",
+    terms: ["Stellantis", "Italdesign", "Reply", "Bosch"],
+    why: "the rest of the local list",
+  },
+  {
     label: "Part makers",
-    q: '(Infineon OR "Nordic Semiconductor" OR Espressif OR "Silicon Labs" OR NXP OR Arduino) (firmware OR embedded)',
+    terms: ["Infineon", "Nordic Semiconductor", "Espressif", "Silicon Labs"],
     why: "the people who build the chips you already use",
   },
   {
     label: "Small Turin firms",
-    q: '("progettazione elettronica" OR "elettronica industriale") (Torino OR Piemonte)',
+    terms: ["progettazione elettronica", "elettronica industriale"],
     why: "under 50 people: the CTO personally did the board and the firmware",
   },
   {
     label: "People who post about it",
-    q: 'STM32 OR KiCad OR Zephyr OR "low power"',
+    terms: ["STM32", "KiCad", "Zephyr", "low power"],
     why: "posts, not titles — they do it whatever they are called",
     posts: true,
   },
@@ -154,11 +165,16 @@ const els = {
 
 // Location and school are LinkedIn's own filters, stored as the ids copied out
 // of a search URL the user has already filtered. They are not keywords: a
-// keyword ANDs with the Boolean string and can empty a good search, which is
+// keyword ANDs with the search terms and can empty a good search, which is
 // what putting "Politecnico di Torino" in the query used to do. Nothing is
 // hardcoded — a guessed id would filter silently to the wrong place.
 let savedGeos = [];
 let savedSchools = [];
+
+async function helperBase() {
+  const { helperUrl = HELPER_DEFAULT } = await chrome.storage.local.get(["helperUrl"]);
+  return helperUrl.replace(/\/$/, "");
+}
 
 async function loadFilters() {
   const {
@@ -263,34 +279,35 @@ async function onRemoveFilter() {
   setGeoStatus("Pick a saved filter first.", true);
 }
 
-async function helperBase() {
-  const { helperUrl = HELPER_DEFAULT } = await chrome.storage.local.get(["helperUrl"]);
-  return helperUrl.replace(/\/$/, "");
+// ---------------- queries ----------------
+
+function chunk(list, size) {
+  const out = [];
+  for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size));
+  return out;
 }
 
-function buildKeywords(q) {
-  const extra = [];
-  if (els.senior.checked) extra.push('(senior OR staff OR principal OR lead OR "head of")');
-  return [q, ...extra].join(" ");
+// Multi-word terms need quoting; single words must not be quoted or LinkedIn
+// treats them as exact-match and drops the inflections.
+function quote(term) {
+  return /\s/.test(term) ? `"${term}"` : term;
 }
 
-// TITLES.md: LinkedIn silently truncates strings past roughly 15 terms. A term is
-// a quoted phrase or a bare word; operators and brackets are not terms.
-function termCount(keywords) {
-  const phrases = keywords.match(/"[^"]*"/g) || [];
-  const bare = keywords
-    .replace(/"[^"]*"/g, " ")
-    .replace(/[()]/g, " ")
-    .split(/\s+/)
-    .filter((w) => w && !/^(OR|AND|NOT)$/i.test(w));
-  return phrases.length + bare.length;
+function buildQuery(terms) {
+  const all = [...terms];
+  if (els.senior.value) all.push(els.senior.value);
+  const quoted = all.map(quote);
+  return quoted.length === 1 ? quoted[0] : `(${quoted.join(" OR ")})`;
 }
 
-function openSearch(q, posts) {
-  const keywords = buildKeywords(q);
+function termCount(terms) {
+  return terms.length + (els.senior.value ? 1 : 0);
+}
+
+function openSearch(terms, posts) {
   const kind = posts ? "content" : "people";
   const u = new URL(`https://www.linkedin.com/search/results/${kind}/`);
-  u.searchParams.set("keywords", keywords);
+  u.searchParams.set("keywords", buildQuery(terms));
   // These filters only mean anything in a people search.
   if (!posts) {
     if (els.geo.value) u.searchParams.set("geoUrn", JSON.stringify([els.geo.value]));
@@ -305,26 +322,30 @@ function openSearch(q, posts) {
   chrome.tabs.create({ url: u.toString() });
 }
 
-function searchButton(s, area) {
+function searchButton(terms, posts) {
   const b = document.createElement("button");
-  const n = termCount(buildKeywords(s.q));
-  b.textContent = n > 15 ? `${s.label} (${n} terms — LinkedIn may truncate)` : s.label;
-  b.title = buildKeywords(s.q);
-  b.addEventListener("click", () => openSearch(s.q, s.posts));
+  const n = termCount(terms);
+  const label = terms.join(" · ");
+  b.textContent = n > MAX_TERMS ? `${label} (${n} terms — too many)` : label;
+  b.title = buildQuery(terms);
+  if (n > MAX_TERMS) b.className = "over";
+  b.addEventListener("click", () => openSearch(terms, posts));
   return b;
 }
 
-function copyButton(q) {
+function copyButton(terms) {
   const b = document.createElement("button");
   b.className = "secondary";
-  b.textContent = "Copy query";
+  b.textContent = "Copy";
   b.addEventListener("click", async () => {
-    await navigator.clipboard.writeText(buildKeywords(q));
+    await navigator.clipboard.writeText(buildQuery(terms));
     b.textContent = "Copied";
-    setTimeout(() => (b.textContent = "Copy query"), 1200);
+    setTimeout(() => (b.textContent = "Copy"), 1200);
   });
   return b;
 }
+
+// ---------------- rendering ----------------
 
 function renderAreas(coverage) {
   els.areas.innerHTML = "";
@@ -367,11 +388,22 @@ function renderAreas(coverage) {
       card.appendChild(q);
     }
 
-    const btns = document.createElement("div");
-    btns.className = "btns";
-    for (const s of area.searches) btns.appendChild(searchButton(s, area));
-    btns.appendChild(copyButton(area.searches[0].q));
-    card.appendChild(btns);
+    for (const set of area.sets) {
+      const row = document.createElement("div");
+      row.className = "set";
+      const lbl = document.createElement("span");
+      lbl.className = "set-label";
+      lbl.textContent = set.label;
+      row.appendChild(lbl);
+      const btns = document.createElement("div");
+      btns.className = "btns";
+      for (const group of chunk(set.terms, GROUP)) {
+        btns.appendChild(searchButton(group));
+        btns.appendChild(copyButton(group));
+      }
+      row.appendChild(btns);
+      card.appendChild(row);
+    }
 
     els.areas.appendChild(card);
   }
@@ -382,12 +414,15 @@ function renderGraph() {
   for (const g of GRAPH) {
     const row = document.createElement("div");
     row.className = "row";
-    row.appendChild(searchButton({ label: g.label, q: g.q, posts: g.posts }));
+    const b = searchButton(g.terms, g.posts);
+    b.textContent = g.label;
+    b.title = buildQuery(g.terms);
+    row.appendChild(b);
     const why = document.createElement("span");
     why.className = "why";
     why.textContent = g.why;
     row.appendChild(why);
-    row.appendChild(copyButton(g.q));
+    row.appendChild(copyButton(g.terms));
     els.graph.appendChild(row);
   }
 }
@@ -426,7 +461,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const coverage = await loadCoverage();
   renderAreas(coverage);
   renderQuota(coverage);
-  // Re-label buttons when the toggle changes the term count.
+  // Seniority adds a term, so the button labels and warnings change with it.
   els.senior.addEventListener("change", () => {
     renderAreas(coverage);
     renderGraph();
