@@ -24,8 +24,19 @@ const SERVER_AREAS = [
   const opened = [];
   const copied = [];
 
+  const stored = {
+    helperUrl: "http://127.0.0.1:5577",
+    savedGeos: [{ label: "Italy", urn: "103350119" }],
+    lastGeo: "103350119",
+    lastNetwork: "S",
+  };
   window.chrome = {
-    storage: { local: { get: async () => ({ helperUrl: "http://127.0.0.1:5577" }) } },
+    storage: {
+      local: {
+        get: async () => stored,
+        set: async (o) => Object.assign(stored, o),
+      },
+    },
     tabs: { create: (o) => opened.push(o.url) },
   };
   // Two contacted in firmware-platform (target met), one in embedded-linux,
@@ -95,9 +106,28 @@ const SERVER_AREAS = [
   toggle("polito", false); toggle("senior", false);
   await tick();
 
+  console.log("\nlocation and connection degree ride along on every search");
+  ok(doc.getElementById("geo").value === "103350119", "the saved location is preselected");
+  ok(doc.getElementById("network").value === "S", "2nd degree is the default");
+  card("firmware-platform").querySelectorAll("button")[0].dispatchEvent(new window.Event("click"));
+  const filtered = new window.URL(opened[opened.length - 1]);
+  ok(filtered.searchParams.get("geoUrn") === '["103350119"]', "geoUrn is applied, so no manual filter step");
+  ok(filtered.searchParams.get("network") === '["S"]', "network is applied");
+
+  // Ids are copied out of a URL the user already filtered — never guessed.
+  const geoUrn = window.eval("geoUrnFromUrl");
+  ok(geoUrn('https://www.linkedin.com/search/results/people/?keywords=x&geoUrn=%5B%22103644278%22%5D') === "103644278",
+     "a pasted LinkedIn URL yields its geoUrn");
+  ok(geoUrn("https://www.linkedin.com/search/results/people/?keywords=x") === null,
+     "a URL with no location filter is rejected");
+  ok(geoUrn("https://example.com/?geoUrn=%5B%221%22%5D") === null, "a non-LinkedIn URL is rejected");
+  ok(geoUrn("not a url") === null, "junk is rejected");
+
   const postsBtn = [...doc.querySelectorAll("#graph button")].find((b) => b.textContent.includes("post"));
   postsBtn.dispatchEvent(new window.Event("click"));
-  ok(opened[opened.length - 1].includes("/search/results/content/"), "the posts row searches posts, not people");
+  const postsUrl = new window.URL(opened[opened.length - 1]);
+  ok(postsUrl.pathname === "/search/results/content/", "the posts row searches posts, not people");
+  ok(!postsUrl.searchParams.get("geoUrn"), "  and does not carry a people-only location filter");
 
   card("firmware-platform").querySelector("button.secondary").dispatchEvent(new window.Event("click"));
   await tick();

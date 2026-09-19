@@ -115,6 +115,15 @@ add `"Politecnico di Torino"` or a seniority filter to every search, and a butto
 when the string passes ~15 terms because LinkedIn silently truncates past that. The counter
 in the corner is today's messages against the daily cap in §D.
 
+**Location** and **Connection** ride along on every people search, so the filter bar is
+not a step you repeat. Connection defaults to 2nd: those have a mutual connection and
+answer far more often than strangers. Locations are stored as LinkedIn's own `geoUrn`
+ids and are never guessed — set the Location filter once on LinkedIn, paste that page's
+URL into **Add a location**, and the id is read out of it. Your own market is the one
+that answers: same timezone for a 20-minute call, PoliTo in common, and the companies you
+could actually join. Somewhere far away is a question for after the sixteen conversations,
+not before.
+
 **Batch** takes the `linkedin.com/in/` tabs you already have open and drafts them one after
 another, so the model's 5-15 seconds stop being your waiting time. Middle-click a handful
 of search results, scroll each tab once so Experience loads, then open Batch, untick anyone

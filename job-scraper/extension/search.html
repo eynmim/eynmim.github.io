@@ -23,6 +23,15 @@
       border-radius: 8px; margin-bottom: 18px;
     }
     .bar label { color: var(--fg-dim); display: flex; align-items: center; gap: 6px; }
+    .bar select, .bar input[type="text"] {
+      background: var(--bg); color: var(--fg); border: 1px solid var(--border);
+      border-radius: 4px; padding: 4px 6px; font-size: 12px;
+    }
+    .bar input[type="text"] { flex: 1; min-width: 180px; }
+    .bar input.short { flex: 0 0 90px; min-width: 90px; }
+    .hint { color: var(--fg-dim); font-size: 12px; flex-basis: 100%; }
+    #geo-status { color: var(--good); font-size: 12px; }
+    #geo-status.bad { color: var(--bad); }
     .quota { margin-left: auto; font-weight: 600; }
     .quota.ok { color: var(--good); }
     .quota.near { color: var(--warn); }
@@ -73,6 +82,33 @@
     <label><input type="checkbox" id="polito" /> add “Politecnico di Torino” to every search</label>
     <label><input type="checkbox" id="senior" /> only senior / staff / lead</label>
     <span id="quota" class="quota">—</span>
+  </div>
+
+  <div class="bar">
+    <label>Location
+      <select id="geo"><option value="">anywhere</option></select>
+    </label>
+    <label>Connection
+      <select id="network">
+        <option value="">any</option>
+        <option value="F">1st</option>
+        <option value="S" selected>2nd</option>
+        <option value="O">3rd+</option>
+      </select>
+    </label>
+    <button id="geo-add-toggle" class="secondary">Add a location</button>
+  </div>
+
+  <div class="bar" id="geo-add" hidden>
+    <span class="hint">
+      Set the Location filter once in LinkedIn’s own filter bar, then paste that page’s URL here.
+      The id is read from it, so it is always the right one.
+    </span>
+    <input id="geo-url" type="text" placeholder="https://www.linkedin.com/search/results/people/?…geoUrn=…" />
+    <input id="geo-label" class="short" type="text" placeholder="Turin" />
+    <button id="geo-save">Save</button>
+    <button id="geo-remove" class="secondary">Remove selected</button>
+    <span id="geo-status"></span>
   </div>
 
   <div id="areas"></div>

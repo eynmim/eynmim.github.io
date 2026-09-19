@@ -141,7 +141,91 @@ const els = {
   polito: document.getElementById("polito"),
   senior: document.getElementById("senior"),
   quota: document.getElementById("quota"),
+  geo: document.getElementById("geo"),
+  network: document.getElementById("network"),
+  geoAddToggle: document.getElementById("geo-add-toggle"),
+  geoAdd: document.getElementById("geo-add"),
+  geoUrl: document.getElementById("geo-url"),
+  geoLabel: document.getElementById("geo-label"),
+  geoSave: document.getElementById("geo-save"),
+  geoRemove: document.getElementById("geo-remove"),
+  geoStatus: document.getElementById("geo-status"),
 };
+
+// Locations are stored as LinkedIn's own geoUrn ids, copied out of a search
+// URL the user has already filtered. Guessing an id would filter silently to
+// the wrong country, so nothing is hardcoded.
+let savedGeos = [];
+
+async function loadGeos() {
+  const { savedGeos: stored = [], lastGeo = "", lastNetwork = "S" } =
+    await chrome.storage.local.get(["savedGeos", "lastGeo", "lastNetwork"]);
+  savedGeos = stored;
+  renderGeos(lastGeo);
+  els.network.value = lastNetwork;
+}
+
+function renderGeos(selected) {
+  els.geo.innerHTML = "";
+  const any = document.createElement("option");
+  any.value = "";
+  any.textContent = "anywhere";
+  els.geo.appendChild(any);
+  for (const g of savedGeos) {
+    const o = document.createElement("option");
+    o.value = g.urn;
+    o.textContent = g.label;
+    els.geo.appendChild(o);
+  }
+  if (selected && savedGeos.some((g) => g.urn === selected)) els.geo.value = selected;
+}
+
+// LinkedIn writes it as geoUrn=["103350119"], percent-encoded.
+function geoUrnFromUrl(raw) {
+  try {
+    const u = new URL(raw.trim());
+    if (!/linkedin\.com$/.test(u.hostname.replace(/^www\./, ""))) return null;
+    const v = u.searchParams.get("geoUrn");
+    if (!v) return null;
+    const ids = JSON.parse(v);
+    const id = Array.isArray(ids) ? ids[0] : ids;
+    return /^\d+$/.test(String(id)) ? String(id) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setGeoStatus(msg, bad) {
+  els.geoStatus.textContent = msg;
+  els.geoStatus.className = bad ? "bad" : "";
+}
+
+async function onSaveGeo() {
+  const urn = geoUrnFromUrl(els.geoUrl.value);
+  if (!urn) {
+    setGeoStatus("No geoUrn in that URL. Set the Location filter on LinkedIn first, then copy the address bar.", true);
+    return;
+  }
+  const label = els.geoLabel.value.trim() || `location ${urn}`;
+  savedGeos = [...savedGeos.filter((g) => g.urn !== urn), { label, urn }];
+  await chrome.storage.local.set({ savedGeos, lastGeo: urn });
+  renderGeos(urn);
+  els.geoUrl.value = "";
+  els.geoLabel.value = "";
+  setGeoStatus(`Saved ${label}. Every button now filters to it.`);
+}
+
+async function onRemoveGeo() {
+  const urn = els.geo.value;
+  if (!urn) {
+    setGeoStatus("Pick a saved location first.", true);
+    return;
+  }
+  savedGeos = savedGeos.filter((g) => g.urn !== urn);
+  await chrome.storage.local.set({ savedGeos, lastGeo: "" });
+  renderGeos("");
+  setGeoStatus("Removed.");
+}
 
 async function helperBase() {
   const { helperUrl = HELPER_DEFAULT } = await chrome.storage.local.get(["helperUrl"]);
@@ -172,6 +256,12 @@ function openSearch(q, posts) {
   const kind = posts ? "content" : "people";
   const u = new URL(`https://www.linkedin.com/search/results/${kind}/`);
   u.searchParams.set("keywords", keywords);
+  // Location and connection degree only mean anything in a people search.
+  if (!posts) {
+    if (els.geo.value) u.searchParams.set("geoUrn", JSON.stringify([els.geo.value]));
+    if (els.network.value) u.searchParams.set("network", JSON.stringify([els.network.value]));
+  }
+  chrome.storage.local.set({ lastGeo: els.geo.value, lastNetwork: els.network.value });
   chrome.tabs.create({ url: u.toString() });
 }
 
@@ -285,6 +375,12 @@ function renderQuota(coverage) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  els.geoAddToggle.addEventListener("click", () => {
+    els.geoAdd.hidden = !els.geoAdd.hidden;
+  });
+  els.geoSave.addEventListener("click", onSaveGeo);
+  els.geoRemove.addEventListener("click", onRemoveGeo);
+  await loadGeos();
   renderGraph();
   renderAreas(null);
   const coverage = await loadCoverage();
