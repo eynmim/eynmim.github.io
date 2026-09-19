@@ -20,21 +20,40 @@ async function openPopup(tabUrl) {
   style.textContent = fs.readFileSync(path.join(EXT, "popup.css"), "utf8");
   window.document.head.appendChild(style);
   const opened = [];
+  const copied = [];
+  // A profile shaped like the real failure: LinkedIn stopped giving up the
+  // name, everything else still came through, raw carried the page.
+  const BLANK_NAME_PROFILE = {
+    url: "https://www.linkedin.com/in/someone/",
+    name: "",
+    headline: "CTO at Example",
+    location: "Paris, France",
+    about: "The AI community building the future.",
+    experience: ["Co-founder, Example, Jul 2016 - Present"],
+    education: [],
+    raw: "x".repeat(5000),
+  };
   window.chrome = {
     storage: { local: { get: async () => ({ helperUrl: "http://127.0.0.1:5577" }) } },
     tabs: { query: async () => [{ id: 1, url: tabUrl }], create: (o) => opened.push(o.url) },
     runtime: {
-      sendMessage: async () => ({ ok: false, error: "not called" }),
+      sendMessage: async (msg) =>
+        msg?.type === "diagnoseProfile"
+          ? { ok: true, profile: BLANK_NAME_PROFILE }
+          : { ok: false, error: "not called" },
       openOptionsPage: () => opened.push("options"),
       getURL: (p) => `chrome-extension://testid/${p}`,
     },
   };
   window.fetch = async () => ({ ok: true, json: async () => ({ due: [] }) });
+  Object.defineProperty(window.navigator, "clipboard", {
+    value: { writeText: async (t) => copied.push(t) }, configurable: true,
+  });
   window.eval(fs.readFileSync(path.join(EXT, "popup.js"), "utf8"));
   window.document.dispatchEvent(new window.Event("DOMContentLoaded"));
   await tick(); await tick();
   const shown = (id) => window.getComputedStyle(window.document.getElementById(id)).display !== "none";
-  return { window, doc: window.document, shown, opened };
+  return { window, doc: window.document, shown, opened, copied };
 }
 
 (async () => {
@@ -55,6 +74,22 @@ async function openPopup(tabUrl) {
   ok(!prof.shown("scan-row"), "Scan this page is withdrawn");
   ok(prof.shown("mentor-row"), "Draft message is offered");
   ok(prof.doc.getElementById("adapter").textContent.includes("MentorMatch"), "the site label switches to MentorMatch");
+
+  console.log("\nCheck DOM — says which field the adapter failed to read, with no model call");
+  ok(prof.shown("diag-btn"), "the button is offered on a profile page");
+  ok(!prof.shown("diag"), "no report until it is asked for");
+  prof.doc.getElementById("diag-btn").dispatchEvent(new prof.window.Event("click"));
+  await tick(); await tick();
+  ok(prof.shown("diag"), "the report appears");
+  const report = prof.doc.getElementById("diag-body").textContent;
+  ok(/EMPTY name/.test(report), "a blank name is called out as EMPTY");
+  ok(/ok +headline/.test(report), "a field that did come through reads ok");
+  ok(/ok +raw +5000 chars/.test(report), "raw shows its size, so the fallback is visible");
+  ok(/EMPTY education/.test(report), "an empty list counts as empty too");
+  ok(report.includes("linkedin.com/in/someone"), "the report names the page it read");
+  prof.doc.getElementById("diag-copy").dispatchEvent(new prof.window.Event("click"));
+  await tick();
+  ok(prof.copied.length === 1 && prof.copied[0] === report, "Copy report puts the whole thing on the clipboard");
 
   console.log("\npopup header");
   const links = [...prof.doc.querySelectorAll("header nav a")].map((a) => a.textContent);

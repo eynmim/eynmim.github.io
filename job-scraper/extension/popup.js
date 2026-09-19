@@ -23,6 +23,10 @@ const els = {
   mentorRow: document.getElementById("mentor-row"),
   mentorType: document.getElementById("mentor-type"),
   draftBtn: document.getElementById("draft-btn"),
+  diagBtn: document.getElementById("diag-btn"),
+  diag: document.getElementById("diag"),
+  diagBody: document.getElementById("diag-body"),
+  diagCopy: document.getElementById("diag-copy"),
   due: document.getElementById("due"),
   outreach: document.getElementById("outreach"),
   fitScore: document.getElementById("fit-score"),
@@ -44,6 +48,7 @@ const els = {
 
 let lastResults = [];
 let lastOutreach = null; // { profile, draft }
+let lastDiag = "";
 
 document.addEventListener("DOMContentLoaded", async () => {
   els.settingsLink.addEventListener("click", (e) => {
@@ -64,6 +69,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   els.exportBtn.addEventListener("click", onExport);
 
   els.draftBtn.addEventListener("click", onDraft);
+  els.diagBtn.addEventListener("click", onDiagnose);
+  els.diagCopy.addEventListener("click", onCopyDiag);
   els.note.addEventListener("input", updateNoteLen);
   els.gmailBtn.addEventListener("click", onOpenGmail);
   els.markSentBtn.addEventListener("click", onMarkSent);
@@ -302,6 +309,55 @@ function renderOutreach() {
   els.markSentBtn.disabled = false;
   updateNoteLen();
   els.outreach.hidden = false;
+}
+
+// LinkedIn changes its DOM often enough that "which field came back empty"
+// needs to be a one-click answer. No helper call, no model call, no quota.
+const DIAG_FIELDS = ["name", "headline", "location", "about", "experience", "education", "raw"];
+
+async function onDiagnose() {
+  setError("");
+  setProgress("Reading this page...");
+  els.diagBtn.disabled = true;
+  els.diag.hidden = true;
+  try {
+    const tab = await getActiveTab();
+    if (!tab?.id) throw new Error("No active tab.");
+    const resp = await chrome.runtime.sendMessage({ type: "diagnoseProfile", tabId: tab.id });
+    if (!resp?.ok) throw new Error(resp?.error || "Unknown error from background.");
+    lastDiag = diagReport(resp.profile);
+    els.diagBody.textContent = lastDiag;
+    els.diag.hidden = false;
+    setProgress("");
+  } catch (e) {
+    setError(e.message || String(e));
+    setProgress("");
+  } finally {
+    els.diagBtn.disabled = false;
+  }
+}
+
+function diagReport(profile) {
+  const lines = [`url ${profile.url || "(none)"}`];
+  for (const key of DIAG_FIELDS) {
+    const v = profile[key];
+    const isList = Array.isArray(v);
+    const size = isList ? `${v.length} items` : `${(v || "").length} chars`;
+    const sample = String((isList ? v[0] : v) || "").replace(/\s+/g, " ");
+    const filled = isList ? v.length > 0 : !!String(v || "").trim();
+    lines.push(`${filled ? "ok   " : "EMPTY"} ${key.padEnd(10)} ${size.padEnd(9)} ${sample.slice(0, 48)}`);
+  }
+  return lines.join("\n");
+}
+
+async function onCopyDiag() {
+  try {
+    await navigator.clipboard.writeText(lastDiag);
+    els.diagCopy.textContent = "Copied";
+    setTimeout(() => (els.diagCopy.textContent = "Copy report"), 1200);
+  } catch (e) {
+    setError(`Copy failed: ${e.message}`);
+  }
 }
 
 function updateNoteLen() {

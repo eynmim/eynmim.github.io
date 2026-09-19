@@ -160,6 +160,19 @@ button.secondary {
   border-radius: 6px;
   font-size: 12px;
 }
+#diag { margin-top: 10px; }
+#diag-body {
+  margin: 0;
+  padding: 8px;
+  max-height: 200px;
+  overflow: auto;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre;
+}
+#diag-btn { padding: 3px 10px; }
 #outreach { max-height: 520px; overflow-y: auto; }
 .fit-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 .draft { margin-top: 10px; }

@@ -26,7 +26,7 @@ Typical tasks and where to look:
 
 | task | file |
 |---|---|
-| LinkedIn changed its DOM, fields come back blank | `extension/adapters/linkedin-profile.js` |
+| LinkedIn changed its DOM, fields come back blank | `extension/adapters/linkedin-profile.js`. Ask Ali for the **Check DOM** report from the popup first — it names the empty fields and costs no quota |
 | tone / structure of the messages | `helper/server.py → OUTREACH_INSTRUCTIONS` |
 | follow-up interval, CSV path, model | `helper/.env` (`FOLLOWUP_DAYS`, `OUTREACH_CSV`, `OUTREACH_MODEL`) |
 | popup UI | `extension/popup.html` / `popup.js` / `popup.css` |

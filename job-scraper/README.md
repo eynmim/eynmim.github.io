@@ -259,7 +259,7 @@ that's yours by hand. The follow-up box is only for people who never answered.
 |---|---|
 | "Helper unreachable" | `python server.py` not running, or `.venv` not activated |
 | "Could not read a profile from this page" | not on a `/in/` URL, or page not loaded — scroll, retry |
-| name/headline blank but a draft came | LinkedIn changed its DOM. F12 → Console → send the line `[JobMatch:linkedin-profile] … raw N chars`. Drafts still work from raw text meanwhile; fix selectors in `extension/adapters/linkedin-profile.js`. |
+| name/headline blank but a draft came | LinkedIn changed its DOM. Press **Check DOM** in the popup: it reruns the adapter and prints one line per field saying `ok` or `EMPTY`, with no helper call and no model call, so it costs nothing. **Copy report** puts it on the clipboard. Drafts keep working from the raw page text meanwhile; fix the selectors in `extension/adapters/linkedin-profile.js`. |
 | "GOOGLE_API_KEY not configured" | check `.env`, restart helper |
 | slow draft / 429 in helper console | Gemini free tier per-minute limit; helper retries with backoff, wait a few seconds |
 | `502 ... 429 RESOURCE_EXHAUSTED ... exceeded your current quota` | the free tier's **daily** cap on `gemini-2.5-flash` is used up (each draft is 1-2 calls). Resets at midnight Pacific. Normal use (5-8 people/day) never hits it; a long test session does. |

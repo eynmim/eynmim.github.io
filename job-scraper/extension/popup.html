@@ -30,10 +30,18 @@
         </select>
       </label>
       <button id="draft-btn">Draft message</button>
+      <button id="diag-btn" class="secondary">Check DOM</button>
     </div>
     <div id="progress" hidden></div>
     <div id="error" class="error" hidden></div>
     <div id="due" class="due" hidden></div>
+    <div id="diag" hidden>
+      <div class="draft-head">
+        <span>What the adapter read from this page</span>
+        <button class="secondary" id="diag-copy">Copy report</button>
+      </div>
+      <pre id="diag-body"></pre>
+    </div>
   </section>
 
   <section id="outreach" hidden>

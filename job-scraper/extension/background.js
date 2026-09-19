@@ -12,6 +12,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       .catch((err) => sendResponse({ ok: false, error: err.message || String(err) }));
     return true;
   }
+  if (msg?.type === "diagnoseProfile") {
+    readProfile(msg.tabId)
+      .then((profile) => sendResponse({ ok: true, profile }))
+      .catch((err) => sendResponse({ ok: false, error: err.message || String(err) }));
+    return true;
+  }
   if (msg?.type === "draftOutreach") {
     draftOutreach(msg.tabId, msg.mentorType)
       .then((data) => sendResponse({ ok: true, ...data }))
@@ -104,7 +110,10 @@ async function loadHelperAndCv() {
   return { helperUrl, helperBase, cvText };
 }
 
-async function draftOutreach(tabId, mentorType) {
+// Inject the profile adapter and run it. Shared by draftOutreach and by the
+// popup's DOM check, which reports what came back without calling anything —
+// LinkedIn changes its DOM often enough that finding out should be free.
+async function readProfile(tabId) {
   await chrome.scripting.executeScript({
     target: { tabId, allFrames: false },
     files: ["adapters/linkedin-profile.js"],
@@ -126,6 +135,11 @@ async function draftOutreach(tabId, mentorType) {
   if (!profile || (!profile.name && !profile.raw)) {
     throw new Error("Could not read a profile from this page. Open a linkedin.com/in/<name> page and scroll once so it loads.");
   }
+  return profile;
+}
+
+async function draftOutreach(tabId, mentorType) {
+  const profile = await readProfile(tabId);
 
   const { helperUrl, helperBase, cvText } = await loadHelperAndCv();
   const { careerFork = "" } = await chrome.storage.local.get(["careerFork"]);
