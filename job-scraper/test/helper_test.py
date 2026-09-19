@@ -200,6 +200,42 @@ try:
 finally:
     server.client = real_client
 
+print("\nseniority counted off the page, not read off the headline")
+# The real profile that scored 85: a self-written "Senior" over two years of work.
+JUNIOR = {
+    "headline": "Senior Embedded Software/Firmware Engineer",
+    "experience": [
+        "Full Time Embedded Systems EngineerFull-timeApr 2024 - May 2026 · 2 yrs 2 mosI develop embedded solutions",
+        "Part Time Embedded Systems EngineerPart-timeAug 2023 - Apr 2024 · 9 mos",
+        "Ground Test InternInternshipMay 2023 - Aug 2023 · 4 mosOn-site",
+    ],
+    "education": ["University of Nebraska-LincolnBachelor's degree, Computer EngineeringAug 2020 – May 2024"],
+}
+sig = server.seniority_signals(JUNIOR)
+ok(sig["listed_role_time"] == "3 yrs 3 mos", f"durations are summed ({sig['listed_role_time']})")
+ok(sig["non_student_role_time"] == "2 yrs 11 mos",
+   f"the internship is left out of the career total ({sig['non_student_role_time']})")
+ok(sig["latest_education_year"] == 2024, "the degree's end year is picked up")
+ok(sig["years_since_education_ended"] == 2, "and turned into years since")
+ok(sig["earliest_role_year"] == 2023, "earliest year on a role")
+
+prompt = server.profile_to_prompt(JUNIOR, "fork", "auto")
+ok("SENIORITY" in prompt, "the numbers reach the prompt")
+ok("2 yrs 11 mos" in prompt, "  including the career total")
+ok("not the word in the headline" in prompt, "  with the instruction to prefer them over the headline")
+
+SENIOR = {
+    "experience": ["Staff Firmware EngineerFull-timeJan 2014 - Present · 12 yrs 8 mos"],
+    "education": ["Politecnico di TorinoMSc2008 – 2013"],
+}
+s2 = server.seniority_signals(SENIOR)
+ok(s2["non_student_role_time"] == "12 yrs 8 mos", f"a long single role is read whole ({s2['non_student_role_time']})")
+ok(s2["years_since_education_ended"] == 13, "and the gap since graduating is large")
+
+empty = server.seniority_signals({})
+ok(empty["listed_role_time"] == "none stated", "a profile with no dates says so rather than guessing zero")
+ok(empty["earliest_role_year"] is None, "and reports unknown years as unknown")
+
 print("\nthe run log")
 log_dir = tmpdir / "logs"
 server.LOG_DIR = log_dir

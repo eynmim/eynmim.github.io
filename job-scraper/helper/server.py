@@ -347,6 +347,63 @@ FILLER_OPENER = re.compile(
 )
 
 
+DURATION_RE = re.compile(r"(?:(\d+)\s*yrs?)?\s*(?:(\d+)\s*mos?)?", re.IGNORECASE)
+YEAR_RE = re.compile(r"\b(19|20)\d{2}\b")
+STUDENT_ROLE_RE = re.compile(r"intern(ship)?|student|trainee|apprentice|volunteer", re.IGNORECASE)
+
+
+def seniority_signals(profile: dict) -> dict:
+    """Years, taken off the page rather than inferred.
+
+    LinkedIn prints the duration under every role ("Apr 2024 - May 2026 ·
+    2 yrs 2 mos") and the years on every degree. Asking a model to do that
+    arithmetic is asking it to get it wrong: a self-written "Senior" in the
+    headline outweighs dates it never added up. So add them up here and hand
+    over the numbers as facts.
+    """
+    months_all = 0
+    months_career = 0
+    role_years: list[int] = []
+    for item in profile.get("experience") or []:
+        text = str(item)
+        # LinkedIn runs the duration straight into the next sentence — "4 mosOn-site",
+        # "2 yrs 2 mosI develop" — so a word boundary after the unit never matches.
+        # A lookahead for a lowercase letter keeps "mosaic" out without needing one.
+        for m in re.finditer(
+            r"(?:(\d+)\s*yrs?(?![a-z])\s*)?(\d+)\s*mos?(?![a-z])|(\d+)\s*yrs?(?![a-z])", text
+        ):
+            yrs = int(m.group(1) or m.group(3) or 0)
+            mos = int(m.group(2) or 0)
+            total = yrs * 12 + mos
+            if not total:
+                continue
+            months_all += total
+            # Only the title and employment type, not the description: a real
+            # engineer who writes about mentoring students would otherwise have
+            # the role struck off and come out looking more junior than they are.
+            if not STUDENT_ROLE_RE.search(text[:80]):
+                months_career += total
+            break  # one duration per role; later numbers are prose
+        role_years += [int(y.group(0)) for y in YEAR_RE.finditer(text)]
+
+    edu_years: list[int] = []
+    for item in profile.get("education") or []:
+        edu_years += [int(y.group(0)) for y in YEAR_RE.finditer(str(item))]
+
+    def fmt(months: int) -> str:
+        return f"{months // 12} yrs {months % 12} mos" if months else "none stated"
+
+    out = {
+        "listed_role_time": fmt(months_all),
+        "non_student_role_time": fmt(months_career),
+        "earliest_role_year": min(role_years) if role_years else None,
+        "latest_education_year": max(edu_years) if edu_years else None,
+    }
+    if out["latest_education_year"]:
+        out["years_since_education_ended"] = max(0, date.today().year - out["latest_education_year"])
+    return out
+
+
 def profile_to_prompt(profile: dict, fork: str, mentor_type: str) -> str:
     parts = []
     if mentor_type and mentor_type != "auto":
@@ -371,6 +428,22 @@ def profile_to_prompt(profile: dict, fork: str, mentor_type: str) -> str:
         if items:
             parts.append(f"{label}:")
             parts.extend(f"  - {str(x)[:300]}" for x in items[:12])
+
+    sig = seniority_signals(profile)
+    parts.append(
+        "\nSENIORITY, counted off the page rather than from the headline:\n"
+        f"  time in listed roles      : {sig['listed_role_time']} (roles can overlap, so an upper bound)\n"
+        f"  excluding student/intern  : {sig['non_student_role_time']}\n"
+        f"  earliest year on a role   : {sig['earliest_role_year'] or 'unknown'}\n"
+        f"  education ends            : {sig['latest_education_year'] or 'unknown'}"
+        + (f"  ({sig['years_since_education_ended']} years ago)" if sig.get("years_since_education_ended") is not None else "")
+        + "\nThese decide the mentor type, not the word in the headline: anyone can write"
+        "\nSenior. Years since education ended is the steadiest of them — role totals can"
+        "\ndouble-count overlapping jobs and student society posts. Two or three years out"
+        "\nof university is the candidate's own stage, so there is nothing to ask: say that"
+        "\nin fit_reason and score low, however the person describes themselves."
+    )
+
     raw = (profile.get("raw") or "").strip()
     if raw:
         parts.append("\nRaw page text (use if structured fields above are thin):\n" + raw[:6000])
