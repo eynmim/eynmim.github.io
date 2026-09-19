@@ -91,10 +91,18 @@
 
       const card = cardFor(link, slug);
       const cardText = text(card);
-      // The profile link's own text is the name, minus the screen-reader wrapper.
-      const name = text(link).replace(/^View\s+/i, "").replace(/’s profile$/i, "").split("·")[0].trim();
-
       const parts = textParts(card);
+
+      // On some result layouts the /in/ link wraps the whole card rather than
+      // just the name, so its text is the entire row. The first text node of
+      // the card is the name in both layouts; the link is only preferred when
+      // it is short enough to actually be one.
+      const linkText = text(link)
+        .replace(/^View\s+/i, "")
+        .replace(/[’']s profile$/i, "")
+        .split("·")[0]
+        .trim();
+      const name = linkText && linkText.length <= 60 ? linkText : parts[0] || "";
       const degree = parts.find((t) => DEGREE.test(t)) || "";
       const at = parts.findIndex((t) => t === name || t.startsWith(name));
       const rest = parts.slice(at >= 0 ? at + 1 : 0).filter((t) => t !== name && !isChrome(t));

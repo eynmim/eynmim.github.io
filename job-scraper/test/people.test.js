@@ -34,6 +34,16 @@ const RESULTS = `
       <div><span>·&nbsp;</span><span>1st</span><span>Embedded Software Recruitment</span><span>Bracknell, England, United Kingdom</span></div>
       <button>Message</button>
     </li>
+    <!-- Second layout, seen live: the /in/ link wraps the entire row, so its
+         own text is the whole card rather than the name. -->
+    <li>
+      <a href="/in/luca-carlone/">
+        <span>Luca Carlone</span><span>·&nbsp;</span><span>2nd</span>
+        <span>Mechanical Designer - Electronic BU - R&amp;D at MTA</span>
+        <span>Lodi, Lombardy, Italy</span><span>Connect</span>
+        <span>Summary: Our products are Instrument Clusters, Electronic Control units.</span>
+      </a>
+    </li>
   </ul>
   <div>
     <a href="/in/jeffrey-grange/">View Jeffrey Grange’s profile</a>
@@ -45,7 +55,7 @@ const people = api.collectPeople();
 const by = (slug) => people.find((p) => p.url.endsWith(slug));
 
 console.log("people search results");
-ok(people.length === 4, `one entry per person (${people.length})`);
+ok(people.length === 5, `one entry per person (${people.length})`);
 ok(new Set(people.map((p) => p.url)).size === people.length,
    "the same person linked twice on the page is not counted twice");
 
@@ -67,6 +77,15 @@ ok(!/mutual connection/i.test(joined), "no mutual-connection rows");
 ok(!/followers/i.test(joined), "no follower counts");
 ok(!/^(Connect|Message)$/m.test(joined), "no action buttons");
 ok(!/\b(1st|2nd|3rd)\b/.test(joined), "no degree badges");
+
+console.log("\nthe layout where the link wraps the whole card");
+const luca = by("luca-carlone");
+ok(luca.name === "Luca Carlone", `name is the name, not the whole row (${luca.name.slice(0, 40)})`);
+ok(luca.name.length < 30, "  and is not the card text");
+ok(luca.headline === "Mechanical Designer - Electronic BU - R&D at MTA", `headline (${luca.headline})`);
+ok(luca.location === "Lodi, Lombardy, Italy", `location (${luca.location})`);
+ok(/Instrument Clusters/.test(luca.snippet), "the summary becomes the snippet");
+ok(!/Connect/.test(`${luca.headline} ${luca.location}`), "the Connect button stays out");
 
 console.log("\nthe open-to-work badge");
 ok(by("venkata-yuva").open_to_work === true, "flagged on the card that shows it");
