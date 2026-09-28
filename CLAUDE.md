@@ -22,6 +22,9 @@ from that.
   New projects go in by hand, or behind an explicit allowlist and a pull request.
 - Facts shown on the site (employer legal name, role titles, dates) must match his
   LinkedIn. Recruiters cross-check.
+- No CV file is served from `public/`. The last one carried a phone number and client
+  part numbers, and nothing on the site linked it. If a downloadable CV comes back, it
+  is a sanitised copy added on purpose, not the master from `F:\ALI_CV`.
 
 ## Open review
 
@@ -36,9 +39,8 @@ working list: P0 first, then P1, then P2. Update it as items land, with the comm
 | sections rendered on the page | `src/components/` (only the ones imported by `App.jsx` are live) |
 | project and experience content | `src/data/projectsData.js`, `src/components/Experience.jsx` |
 | i18n strings | `src/i18n/translations.js`, `src/context/LanguageContext.jsx` |
-| CV served to visitors | `public/Ali_Mansouri_CV.md`, `public/Ali_Mansouri_CV.pdf` |
 | head tags, fonts | `index.html` |
-| MentorMatch outreach tool | `job-scraper/` — see its own `CLAUDE.md`; it is scheduled to move to a private repo |
+| MentorMatch outreach tool | moved out on 2026-09-28 to the private repo `eynmim/mentormatch` |
 
 Keep changes surgical: this is a design-led site, so don't reformat or "improve" components
 that the task didn't ask about.
