@@ -5,7 +5,7 @@ const EMAIL = 'Mansouriali955@gmail.com';
 
 const CHANNELS = [
   { label: 'GitHub', sub: '@eynmim', href: 'https://github.com/eynmim' },
-  { label: 'LinkedIn', sub: 'Ali Mansouri', href: 'https://www.linkedin.com/in/ali-mansouri-767b65235/' },
+  { label: 'LinkedIn', sub: 'Ali Mansouri', href: 'https://www.linkedin.com/in/alimansouri-iot' },
   { label: 'Location', sub: 'Turin, Italy', href: null },
 ];
 

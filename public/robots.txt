@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://eynmim.github.io/sitemap.xml
+Sitemap: https://alimansouri.net/sitemap.xml
